@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
 
-    Avatar: { type: String, default: "" },
-    Avatarpublicid: { type: String, default: "" },
+    avatar: { type: String, default: "" },
+    avatarpublicid: { type: String, default: "" },
 
     role: {
         type: String,
@@ -70,5 +71,21 @@ const userSchema = new mongoose.Schema({
     phoneNo: String,
 
 }, { timestamps: true });
+
+
+userSchema.methods.matchPassword = async function (Password) {
+  return await bcrypt.compare(Password, this.password);
+};
+
+
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    next(); 
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
 
 export default mongoose.model("User", userSchema);

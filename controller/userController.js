@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail } from "../emailVerify/verifyEmail.js";
+import { generateTokens } from "../utils/generateTokens.js";
 
 export const register= async(req,res)=>{
     try{
@@ -20,12 +21,12 @@ export const register= async(req,res)=>{
             })
 
         }
-        const hashedPassword=await bcrypt.hash(password,10);
+    
         const newUser= await User.create({
             firstName,
             lastName,
             email,
-            password:hashedPassword,
+            password,
             role
         })
         const token= jwt.sign({id: newUser._id},process.env.SECRET_KEY,{expiresIn:'1h'})
@@ -43,3 +44,53 @@ export const register= async(req,res)=>{
         })
     }
 }
+
+export const login = async (req, res) => {
+    try {
+
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (!user.isVerified) {
+            return res.status(400).json({
+                success: false,
+                message: "User is not verified"
+            });
+        }
+
+        const isMatch = await user.matchPassword(password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        generateTokens(res, user._id);
+
+        return res.status(200).json({
+            success: true,
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+};
