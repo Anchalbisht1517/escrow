@@ -4,43 +4,43 @@ import jwt from 'jsonwebtoken';
 import { sendVerificationEmail } from "../emailVerify/verifyEmail.js";
 import { generateTokens } from "../utils/generateTokens.js";
 
-export const register= async(req,res)=>{
-    try{
-        const {firstName,lastName,email,password,role}=req.body;
-        if(!firstName||!lastName||!email||!password||!role){
+export const register = async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, role } = req.body;
+        if (!firstName || !lastName || !email || !password || !role) {
             return res.status(400).json({
-                success:false,
-                message:"All fields are mandatory"
+                success: false,
+                message: "All fields are mandatory"
             })
         }
-        const user= await User.findOne({email});
-        if(user){
+        const user = await User.findOne({ email });
+        if (user) {
             return res.status(400).json({
-                success:false,
-                message:"user already exists"
+                success: false,
+                message: "user already exists"
             })
 
         }
-    
-        const newUser= await User.create({
+
+        const newUser = await User.create({
             firstName,
             lastName,
             email,
             password,
             role
         })
-        const token= jwt.sign({id: newUser._id},process.env.SECRET_KEY,{expiresIn:'1h'})
-        await sendVerificationEmail({token,email});
+        const token = jwt.sign({ id: newUser._id }, process.env.SECRET_KEY, { expiresIn: '1h' })
+        await sendVerificationEmail({ token, email });
         return res.status(200).json({
-            success:true,
-            message:"user registred successfully"
+            success: true,
+            message: "user registred successfully"
         })
 
     }
-    catch(error){
+    catch (error) {
         res.status(500).json({
-            success:false,
-            message:error.message
+            success: false,
+            message: error.message
         })
     }
 }
@@ -92,5 +92,48 @@ export const login = async (req, res) => {
             message: error.message
         });
 
+    }
+};
+// Logout Controller — Stateless Session Destruction by clearing cookies
+export const logout = async (req, res) => {
+    try {
+        // Clear accessToken cookie
+        res.clearCookie("accessToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+
+        // Clear refreshToken cookie
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Simple Profile controller to test authentication & roles
+export const getUserProfile = async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            user: req.user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
