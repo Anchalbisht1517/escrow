@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema({
             }
         ]
     },
-       isVerified: {
+    isVerified: {
         type: Boolean,
         default: false
     },
@@ -74,17 +74,17 @@ const userSchema = new mongoose.Schema({
 
 
 userSchema.methods.matchPassword = async function (Password) {
-  return await bcrypt.compare(Password, this.password);
+    return await bcrypt.compare(Password, this.password);
 };
 
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next(); 
-  }
+userSchema.pre('save', async function () {
+    if (!this.isModified('password')) {
+        return; // stop password if execution reaches here if password didn't change
+    }
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
 });
 
 
