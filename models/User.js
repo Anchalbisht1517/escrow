@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
 
     avatar: { type: String, default: "" },
-    avatarpublicid: { type: String, default: "" },
+    avatarPublicId: { type: String, default: "" },
 
     role: {
         type: String,
@@ -27,9 +27,35 @@ const userSchema = new mongoose.Schema({
             default: []
         },
 
-        portfolio: {
+        bio: {
             type: String,
             default: ""
+        },
+
+        experience: {
+            type: String,
+            default: ""
+        },
+
+        hourlyRate: {
+            type: Number,
+            default: 0
+        },
+
+        portfolioLinks: [{
+            type: String
+        }],
+
+        resume: {
+            public_id: {
+                type: String,
+                default: ""
+            },
+
+            url: {
+                type: String,
+                default: ""
+            }
         },
 
         rating: {
@@ -41,17 +67,20 @@ const userSchema = new mongoose.Schema({
             {
                 fromUser: {
                     type: mongoose.Schema.Types.ObjectId,
-                    ref: "User",
+                    ref: "User"
                 },
+
                 rating: {
                     type: Number,
                     min: 1,
                     max: 5
                 },
+
                 comment: {
                     type: String,
                     default: ""
                 },
+
                 createdAt: {
                     type: Date,
                     default: Date.now
