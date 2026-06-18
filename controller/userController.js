@@ -1,9 +1,10 @@
 import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
 import { sendVerificationEmail } from "../emailVerify/verifyEmail.js";
 import { generateTokens } from "../utils/generateTokens.js";
-import { cloudinary } from "../config/avatarUpload.js";
+
 
 export const register = async (req, res) => {
     try {
@@ -159,21 +160,23 @@ export const uploadAvatar = async (req, res) => {
             });
         }
 
-        if (user.avatarPublicId) {
-            await cloudinary.uploader.destroy(user.avatarPublicId);
+        // Delete old avatar if it exists
+        if (user.avatar) {
+            const oldPath = user.avatar.replace('/uploads/', 'uploads/');
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
         }
 
-        user.avatar = req.file.path;
-        user.avatarPublicId = req.file.filename;
-
+        // Save new avatar path
+        user.avatar = `/uploads/avatars/${req.file.filename}`;
+        user.avatarPublicId = req.file.filename; // keep for reference
         await user.save();
 
         return res.status(200).json({
             success: true,
             message: 'Avatar uploaded successfully',
-            data: {
-                avatar: user.avatar
-            }
+            data: { avatar: user.avatar }
         });
 
     } catch (error) {
@@ -185,41 +188,42 @@ export const uploadAvatar = async (req, res) => {
 };
 
 export const deleteAvatar = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
+    try {
+        const user = await User.findById(req.user._id);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (user.avatar) {
+            const filePath = user.avatar.replace('/uploads/', 'uploads/');
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
+        user.avatar = "";
+        user.avatarPublicId = "";
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Avatar deleted successfully"
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-
-    if (user.avatarPublicId) {
-      await cloudinary.uploader.destroy(user.avatarPublicId);
-    }
-
-    user.avatar = "";
-    user.avatarPublicId = "";
-
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Avatar deleted successfully"
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
 };
 
 export const uploadResume = async (req, res) => {
     try {
-
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -236,21 +240,17 @@ export const uploadResume = async (req, res) => {
             });
         }
 
-        // Delete old resume if it exists
-        if (
-            user.freelancerInfo?.resume?.public_id
-        ) {
-            await cloudinary.uploader.destroy(
-                user.freelancerInfo.resume.public_id,
-                {
-                    resource_type: "raw"
-                }
-            );
+        // Delete old resume if exists
+        if (user.freelancerInfo?.resume?.url) {
+            const oldPath = user.freelancerInfo.resume.url.replace('/uploads/', 'uploads/');
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
         }
 
         user.freelancerInfo.resume = {
             public_id: req.file.filename,
-            url: req.file.path
+            url: `/uploads/resumes/${req.file.filename}`
         };
 
         await user.save();
@@ -258,7 +258,7 @@ export const uploadResume = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Resume uploaded successfully",
-            resume: user.freelancerInfo.resume
+            data: { resume: user.freelancerInfo.resume }
         });
 
     } catch (error) {
@@ -268,10 +268,8 @@ export const uploadResume = async (req, res) => {
         });
     }
 };
-
 export const deleteResume = async (req, res) => {
     try {
-
         const user = await User.findById(req.user._id);
 
         if (!user) {
@@ -281,15 +279,11 @@ export const deleteResume = async (req, res) => {
             });
         }
 
-        if (
-            user.freelancerInfo?.resume?.public_id
-        ) {
-            await cloudinary.uploader.destroy(
-                user.freelancerInfo.resume.public_id,
-                {
-                    resource_type: "raw"
-                }
-            );
+        if (user.freelancerInfo?.resume?.url) {
+            const filePath = user.freelancerInfo.resume.url.replace('/uploads/', 'uploads/');
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
 
         user.freelancerInfo.resume = {

@@ -6,16 +6,14 @@ import {
   logout,
   getUserProfile,
   uploadAvatar,
-  deleteAvatar
+  deleteAvatar,
+  uploadResume,
+  deleteResume
 } from "../controller/userController.js";
 
 import { verifyEmailController } from "../controller/verifyEmail.js";
 import { protect, restrictTo } from "../middleware/authMiddleware.js";
-
-import { upload } from "../config/avatarUpload.js";
-import { resumeUpload} from "../config/resumeUpload.js";
-import {uploadResume} from "../controller/userController.js";
-import { deleteResume } from "../controller/userController.js";
+import { uploadAvatar as uploadAvatarMulter, uploadResumeLocal } from "../config/multerUpload.js";
 
 export const router = express.Router();
 
@@ -42,14 +40,14 @@ router.get(
 router.post(
   "/avatar",
   protect,
-  upload.single("avatar"),
+  uploadAvatarMulter.single("avatar"),
   uploadAvatar
 );
 
 router.put(
   "/avatar",
   protect,
-  upload.single("avatar"),
+  uploadAvatarMulter.single("avatar"),
   uploadAvatar
 );
 
@@ -60,16 +58,16 @@ router.delete(
 );
 
 router.post(
-    "/resume",
-    protect,
-    restrictTo("freelancer"),
-    resumeUpload.single("resume"),
-    uploadResume
+  "/resume",
+  protect,
+  restrictTo("freelancer"),
+  uploadResumeLocal.single("resume"),
+  uploadResume
 );
 
 router.delete(
-    "/resume",
-    protect,
-    restrictTo("freelancer"),
-    deleteResume
+  "/resume",
+  protect,
+  restrictTo("freelancer"),
+  deleteResume
 );
