@@ -8,9 +8,12 @@ import {
   uploadAvatar,
   deleteAvatar,
   uploadResume,
-  deleteResume
+  deleteResume,
+  refresh,
+  getMe
 } from "../controller/userController.js";
 
+import { forgotPassword, resetPassword } from "../controller/passwordResetController.js";
 import { verifyEmailController } from "../controller/verifyEmail.js";
 import { protect, restrictTo } from "../middleware/authMiddleware.js";
 import { uploadAvatar as uploadAvatarMulter, uploadResumeLocal } from "../config/multerUpload.js";
@@ -20,8 +23,12 @@ export const router = express.Router();
 router.post("/register", register);
 router.get("/verify-email", verifyEmailController);
 router.post("/login", login);
+router.post("/refresh", refresh);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 router.post("/logout", protect, logout);
+router.get("/me", protect, getMe);
 
 router.get(
   "/client/profile",

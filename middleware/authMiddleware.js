@@ -26,6 +26,13 @@ export const protect = async (req, res, next) => {
             });
         }
 
+        if (!user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message: "User account is inactive"
+            });
+        }
+
         req.user = user;
         next();
     } catch (error) {
@@ -49,4 +56,16 @@ export const restrictTo = (...roles) => {
         }
         next();
     };
+};
+
+// 3. Admin-only Middleware
+export const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: "Forbidden: Access denied. Admins only."
+        });
+    }
 };

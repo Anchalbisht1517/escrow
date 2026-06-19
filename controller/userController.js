@@ -305,3 +305,102 @@ export const deleteResume = async (req, res) => {
         });
     }
 };
+
+export const refresh = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Refresh token is missing"
+            });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (!user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message: "User account is inactive"
+            });
+        }
+
+        generateTokens(res, user._id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Token refreshed successfully"
+        });
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid or expired refresh token"
+        });
+    }
+};
+
+export const getMe = async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            user: req.user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getUserPublicProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getUserWallet = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('walletBalance transactionHistory');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            walletBalance: user.walletBalance,
+            transactionHistory: user.transactionHistory || []
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

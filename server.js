@@ -8,6 +8,7 @@ import 'dotenv/config';
 import { validateEnv } from './config/validateEnv.js';
 import dbConnection from './config/db.js';
 import { router } from "./routes/userRoute.js";
+import usersRouter from './routes/usersRoute.js';
 import projectRouter from './routes/projectRoute.js';
 import bidRouter from './routes/bidRoute.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -56,6 +57,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", router);
+app.use("/api/users", usersRouter);
 app.use("/api/projects", projectRouter);
 app.use("/api/bids", bidRouter);
 

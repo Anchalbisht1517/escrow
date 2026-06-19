@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    name: { type: String, default: "" },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
 
@@ -12,9 +13,56 @@ const userSchema = new mongoose.Schema({
 
     role: {
         type: String,
-        enum: ['client', 'freelancer'],
+        enum: ['client', 'freelancer', 'admin'],
         required: true
     },
+
+    walletBalance: {
+        type: Number,
+        default: 0
+    },
+
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+
+    avgRating: {
+        type: Number,
+        default: 0
+    },
+
+    totalReviews: {
+        type: Number,
+        default: 0
+    },
+
+    bio: {
+        type: String,
+        default: ""
+    },
+
+    portfolio: {
+        type: [String],
+        default: []
+    },
+
+    passwordResetToken: {
+        type: String
+    },
+
+    passwordResetExpires: {
+        type: Date
+    },
+
+    transactionHistory: [
+        {
+            amount: { type: Number, required: true },
+            type: { type: String, enum: ['credit', 'debit'], required: true },
+            description: { type: String, default: "" },
+            date: { type: Date, default: Date.now }
+        }
+    ],
 
     clientInfo: {
         companyName: String,
@@ -108,6 +156,10 @@ userSchema.methods.matchPassword = async function (Password) {
 
 
 userSchema.pre('save', async function () {
+    if (this.isModified('firstName') || this.isModified('lastName') || !this.name) {
+        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+    }
+
     if (!this.isModified('password')) {
         return; // stop password if execution reaches here if password didn't change
     }
