@@ -11,7 +11,11 @@ export const verifyEmailController = async (req, res) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        data: null
+      });
     }
 
     user.isVerified = true;
@@ -20,12 +24,14 @@ export const verifyEmailController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Email verified",
+      data: null
     });
 
   } catch (err) {
     return res.status(400).json({
       success: false,
       message: "Invalid or expired token",
+      data: null
     });
   }
 };

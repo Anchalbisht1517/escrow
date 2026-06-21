@@ -7,7 +7,8 @@ export const isProjectParticipant = async (req, res, next) => {
         if (!project) {
             return res.status(404).json({
                 success: false,
-                message: "Project not found"
+                message: "Project not found",
+                data: null
             });
         }
 
@@ -19,7 +20,8 @@ export const isProjectParticipant = async (req, res, next) => {
         if (!isClient && !isHiredFreelancer) {
             return res.status(403).json({
                 success: false,
-                message: "Access denied: You are not a participant of this project"
+                message: "Access denied: You are not a participant of this project",
+                data: null
             });
         }
 
@@ -30,7 +32,8 @@ export const isProjectParticipant = async (req, res, next) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };

@@ -4,13 +4,15 @@ const bidSchema = new mongoose.Schema({
     project: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Project',
-        required: true
+        required: true,
+        index: true
     },
 
     freelancer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
 
     amount: {
@@ -18,17 +20,25 @@ const bidSchema = new mongoose.Schema({
         required: true
     },
 
-    proposal: {
+    estimatedDays: {
+        type: Number,
+        required: true
+    },
+
+    coverLetter: {
         type: String,
         required: true
     },
 
     status: {
         type: String,
-        enum: ['pending', 'accepted', 'rejected'],
+        enum: ['pending', 'accepted', 'rejected', 'withdrawn'],
         default: 'pending'
     }
 
 }, { timestamps: true });
+
+// Compound unique index to prevent a freelancer from bidding multiple times on the same project
+bidSchema.index({ project: 1, freelancer: 1 }, { unique: true });
 
 export default mongoose.model('Bid', bidSchema);

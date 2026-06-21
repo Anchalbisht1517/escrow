@@ -5,13 +5,15 @@ const projectSchema = new mongoose.Schema({
     client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
 
     hiredFreelancer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        default: null
+        default: null,
+        index: true
     },
 
     // ─── TIER 1: PUBLIC INFO ───
@@ -25,8 +27,19 @@ const projectSchema = new mongoose.Schema({
         required: true
     },
 
-    budget: {
+    budgetMin: {
         type: Number,
+        required: true
+    },
+
+    budgetMax: {
+        type: Number,
+        required: true
+    },
+
+    budgetType: {
+        type: String,
+        enum: ['fixed', 'hourly'],
         required: true
     },
 
@@ -39,10 +52,23 @@ const projectSchema = new mongoose.Schema({
         type: Date
     },
 
+    totalBids: {
+        type: Number,
+        default: 0
+    },
+
+    acceptedBidId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bid',
+        default: null,
+        index: true
+    },
+
     status: {
         type: String,
-        enum: ['open', 'in-progress', 'completed', 'closed'],
-        default: 'open'
+        enum: ['open', 'in-progress', 'completed', 'cancelled'],
+        default: 'open',
+        index: true
     },
 
     // ─── TIER 2: PRIVATE INFO ───

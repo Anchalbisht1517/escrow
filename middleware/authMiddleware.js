@@ -10,7 +10,8 @@ export const protect = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 success: false,
-                message: "Not authorized, no token found"
+                message: "Not authorized, no token found",
+                data: null
             });
         }
 
@@ -22,14 +23,16 @@ export const protect = async (req, res, next) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
         if (!user.isActive) {
             return res.status(403).json({
                 success: false,
-                message: "User account is inactive"
+                message: "User account is inactive",
+                data: null
             });
         }
 
@@ -38,7 +41,8 @@ export const protect = async (req, res, next) => {
     } catch (error) {
         return res.status(401).json({
             success: false,
-            message: "Not authorized, token failed or expired"
+            message: "Not authorized, token failed or expired",
+            data: null
         });
     }
 };
@@ -51,7 +55,8 @@ export const restrictTo = (...roles) => {
         if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: `Forbidden: Access denied. Role '${req.user?.role}' is not authorized.`
+                message: `Forbidden: Access denied. Role '${req.user?.role}' is not authorized.`,
+                data: null
             });
         }
         next();
@@ -65,7 +70,8 @@ export const isAdmin = (req, res, next) => {
     } else {
         return res.status(403).json({
             success: false,
-            message: "Forbidden: Access denied. Admins only."
+            message: "Forbidden: Access denied. Admins only.",
+            data: null
         });
     }
 };

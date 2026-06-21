@@ -12,7 +12,8 @@ export const forgotPassword = async (req, res) => {
         if (!email) {
             return res.status(400).json({
                 success: false,
-                message: "Email is required"
+                message: "Email is required",
+                data: null
             });
         }
 
@@ -21,7 +22,8 @@ export const forgotPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "No account found with this email"
+                message: "No account found with this email",
+                data: null
             });
         }
 
@@ -52,19 +54,22 @@ export const forgotPassword = async (req, res) => {
 
             return res.status(500).json({
                 success: false,
-                message: "Error sending password reset email. Please try again later."
+                message: "Error sending password reset email. Please try again later.",
+                data: null
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Password reset link sent to email"
+            message: "Password reset link sent to email",
+            data: null
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -79,7 +84,8 @@ export const resetPassword = async (req, res) => {
         if (!password) {
             return res.status(400).json({
                 success: false,
-                message: "Password is required"
+                message: "Password is required",
+                data: null
             });
         }
 
@@ -98,7 +104,8 @@ export const resetPassword = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid or expired password reset token"
+                message: "Invalid or expired password reset token",
+                data: null
             });
         }
 
@@ -111,13 +118,15 @@ export const resetPassword = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Password reset successful"
+            message: "Password reset successful",
+            data: null
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };

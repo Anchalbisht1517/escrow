@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         enum: ['client', 'freelancer', 'admin'],
-        required: true
+        required: true,
+        index: true
     },
 
     walletBalance: {
@@ -48,7 +49,8 @@ const userSchema = new mongoose.Schema({
     },
 
     passwordResetToken: {
-        type: String
+        type: String,
+        index: true
     },
 
     passwordResetExpires: {

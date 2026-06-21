@@ -12,14 +12,16 @@ export const register = async (req, res) => {
         if (!firstName || !lastName || !email || !password || !role) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are mandatory"
+                message: "All fields are mandatory",
+                data: null
             })
         }
         const user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({
                 success: false,
-                message: "user already exists"
+                message: "user already exists",
+                data: null
             })
 
         }
@@ -35,14 +37,16 @@ export const register = async (req, res) => {
         await sendVerificationEmail({ token, email });
         return res.status(200).json({
             success: true,
-            message: "user registred successfully"
+            message: "user registred successfully",
+            data: null
         })
 
     }
     catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         })
     }
 }
@@ -57,14 +61,16 @@ export const login = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
         if (!user.isVerified) {
             return res.status(400).json({
                 success: false,
-                message: "User is not verified"
+                message: "User is not verified",
+                data: null
             });
         }
 
@@ -73,7 +79,8 @@ export const login = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password"
+                message: "Invalid email or password",
+                data: null
             });
         }
 
@@ -81,17 +88,21 @@ export const login = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email
+            message: "Login successful",
+            data: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
         });
 
     } catch (error) {
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
 
     }
@@ -115,12 +126,14 @@ export const logout = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Logged out successfully"
+            message: "Logged out successfully",
+            data: null
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -130,12 +143,14 @@ export const getUserProfile = async (req, res) => {
     try {
         return res.status(200).json({
             success: true,
-            user: req.user
+            message: "User profile retrieved successfully",
+            data: { user: req.user }
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -147,7 +162,8 @@ export const uploadAvatar = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: 'No file uploaded'
+                message: 'No file uploaded',
+                data: null
             });
         }
 
@@ -156,7 +172,8 @@ export const uploadAvatar = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'User not found',
+                data: null
             });
         }
 
@@ -182,7 +199,8 @@ export const uploadAvatar = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -194,7 +212,8 @@ export const deleteAvatar = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
@@ -211,13 +230,15 @@ export const deleteAvatar = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Avatar deleted successfully"
+            message: "Avatar deleted successfully",
+            data: null
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -227,7 +248,8 @@ export const uploadResume = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "No resume uploaded"
+                message: "No resume uploaded",
+                data: null
             });
         }
 
@@ -236,7 +258,8 @@ export const uploadResume = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
@@ -264,7 +287,8 @@ export const uploadResume = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -275,7 +299,8 @@ export const deleteResume = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
@@ -295,13 +320,15 @@ export const deleteResume = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Resume deleted successfully"
+            message: "Resume deleted successfully",
+            data: null
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -313,7 +340,8 @@ export const refresh = async (req, res) => {
         if (!refreshToken) {
             return res.status(401).json({
                 success: false,
-                message: "Refresh token is missing"
+                message: "Refresh token is missing",
+                data: null
             });
         }
 
@@ -323,14 +351,16 @@ export const refresh = async (req, res) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
 
         if (!user.isActive) {
             return res.status(403).json({
                 success: false,
-                message: "User account is inactive"
+                message: "User account is inactive",
+                data: null
             });
         }
 
@@ -338,12 +368,14 @@ export const refresh = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Token refreshed successfully"
+            message: "Token refreshed successfully",
+            data: null
         });
     } catch (error) {
         return res.status(401).json({
             success: false,
-            message: "Invalid or expired refresh token"
+            message: "Invalid or expired refresh token",
+            data: null
         });
     }
 };
@@ -352,12 +384,14 @@ export const getMe = async (req, res) => {
     try {
         return res.status(200).json({
             success: true,
-            user: req.user
+            message: "Current user data retrieved successfully",
+            data: { user: req.user }
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -368,17 +402,20 @@ export const getUserPublicProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
         return res.status(200).json({
             success: true,
-            user
+            message: "User public profile retrieved successfully",
+            data: { user }
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
@@ -389,18 +426,23 @@ export const getUserWallet = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                data: null
             });
         }
         return res.status(200).json({
             success: true,
-            walletBalance: user.walletBalance,
-            transactionHistory: user.transactionHistory || []
+            message: "User wallet details retrieved successfully",
+            data: {
+                walletBalance: user.walletBalance,
+                transactionHistory: user.transactionHistory || []
+            }
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
+            data: null
         });
     }
 };
