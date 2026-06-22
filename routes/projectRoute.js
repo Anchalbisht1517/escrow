@@ -6,12 +6,15 @@ import {
     getPublicProject,
     getPrivateProject,
     listProjects,
-    hireFreelancer
+    hireFreelancer,
+    editProject,
+    cancelProject
 } from '../controller/projectController.js';
 
 const router = express.Router();
 
-// PUBLIC: List all open projects (any authenticated user)
+// PUBLIC: List all open projects with pagination & filtering (any authenticated user)
+// Query params: ?skills=react,node&budgetMin=500&budgetMax=5000&search=ecommerce&page=1&limit=10
 router.get('/', protect, listProjects);
 
 // PUBLIC: Get project public info (any authenticated user)
@@ -22,6 +25,12 @@ router.get('/:id/private', protect, restrictTo('client', 'freelancer'), isProjec
 
 // CREATE: Only clients can post projects
 router.post('/', protect, restrictTo('client'), createProject);
+
+// EDIT: Only the owning client can edit an open project
+router.put('/:id', protect, restrictTo('client'), editProject);
+
+// CANCEL: Only the owning client can cancel a project (no accepted bids)
+router.delete('/:id', protect, restrictTo('client'), cancelProject);
 
 // HIRE: Only client can hire a freelancer for their project
 router.patch('/:id/hire', protect, restrictTo('client'), isProjectParticipant, hireFreelancer);
