@@ -8,7 +8,8 @@ import {
     listProjects,
     hireFreelancer,
     editProject,
-    cancelProject
+    cancelProject,
+    completeProject
 } from '../controller/projectController.js';
 
 const router = express.Router();
@@ -29,8 +30,11 @@ router.post('/', protect, restrictTo('client'), createProject);
 // EDIT: Only the owning client can edit an open project
 router.put('/:id', protect, restrictTo('client'), editProject);
 
-// CANCEL: Only the owning client can cancel a project (no accepted bids)
-router.delete('/:id', protect, restrictTo('client'), cancelProject);
+// CANCEL: Client cancels a project (auto-refunds escrow if locked)
+router.delete('/:id', protect, restrictTo('client'), isProjectParticipant, cancelProject);
+
+// COMPLETE: Client marks project as done — releases escrow to freelancer
+router.patch('/:id/complete', protect, restrictTo('client'), isProjectParticipant, completeProject);
 
 // HIRE: Only client can hire a freelancer for their project
 router.patch('/:id/hire', protect, restrictTo('client'), isProjectParticipant, hireFreelancer);

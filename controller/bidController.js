@@ -1,5 +1,6 @@
 import Bid from '../models/Bid.js';
 import Project from '../models/Project.js';
+import User from '../models/User.js';
 
 // ─── PLACE A BID (Freelancer only) ───
 export const placeBid = async (req, res) => {
@@ -77,11 +78,36 @@ export const acceptBid = async (req, res) => {
             return res.status(403).json({ success: false, message: "Only the client can accept bids", data: null });
         }
 
+        // Cannot accept if escrow is already locked (bid already accepted)
+        if (project.escrowStatus === 'locked') {
+            return res.status(400).json({ success: false, message: "A bid has already been accepted and funds are locked for this project", data: null });
+        }
+
         const bid = await Bid.findById(bidId);
 
         if (!bid || bid.project.toString() !== project._id.toString()) {
             return res.status(404).json({ success: false, message: "Bid not found for this project", data: null });
         }
+
+        // ─── ESCROW LOCK: Check client wallet has sufficient balance ───
+        const client = await User.findById(req.user._id);
+        if (client.walletBalance < bid.amount) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient wallet balance to lock funds. Required: ₹${bid.amount}, Available: ₹${client.walletBalance}. Please top up your wallet first.`,
+                data: null
+            });
+        }
+
+        // Debit client wallet and record transaction
+        client.walletBalance -= bid.amount;
+        client.transactionHistory.push({
+            amount: bid.amount,
+            type: 'debit',
+            description: `Escrow locked for project: ${project.title}`,
+            date: new Date()
+        });
+        await client.save();
 
         // Reject all other bids
         await Bid.updateMany(
@@ -93,16 +119,25 @@ export const acceptBid = async (req, res) => {
         bid.status = 'accepted';
         await bid.save();
 
-        // Update project
+        // Update project — lock escrow
         project.hiredFreelancer = bid.freelancer;
         project.status = 'in-progress';
         project.acceptedBidId = bid._id;
+        project.escrowAmount = bid.amount;
+        project.escrowStatus = 'locked';
         await project.save();
 
         return res.status(200).json({
             success: true,
-            message: "Bid accepted. Freelancer hired.",
-            data: { project, bid }
+            message: "Bid accepted. Freelancer hired. Escrow funds locked.",
+            data: {
+                project,
+                bid,
+                escrow: {
+                    lockedAmount: bid.amount,
+                    clientNewBalance: client.walletBalance
+                }
+            }
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message, data: null });

@@ -1,5 +1,6 @@
 import Project from '../models/Project.js';
 import Bid from '../models/Bid.js';
+import User from '../models/User.js';
 
 // ─── CREATE PROJECT (Client only) ───
 export const createProject = async (req, res) => {
@@ -208,8 +209,8 @@ export const editProject = async (req, res) => {
     }
 };
 
-// ─── CANCEL PROJECT (Client owner only, no accepted bids) ───
-// 3.2 - DELETE /api/projects/:id
+// ─── CANCEL PROJECT (Client owner only) ───
+// If escrow is locked, refund the client before cancelling.
 export const cancelProject = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id);
@@ -232,14 +233,20 @@ export const cancelProject = async (req, res) => {
             return res.status(400).json({ success: false, message: "Completed projects cannot be cancelled", data: null });
         }
 
-        // Check for any accepted bids - cannot cancel if a bid has been accepted
-        const acceptedBid = await Bid.findOne({ project: project._id, status: 'accepted' });
-        if (acceptedBid) {
-            return res.status(400).json({
-                success: false,
-                message: "Cannot cancel a project with an accepted bid. Resolve the ongoing work first.",
-                data: null
-            });
+        // ─── ESCROW REFUND: If funds were locked, refund the client ───
+        if (project.escrowStatus === 'locked' && project.escrowAmount > 0) {
+            const client = await User.findById(project.client);
+            if (client) {
+                client.walletBalance += project.escrowAmount;
+                client.transactionHistory.push({
+                    amount: project.escrowAmount,
+                    type: 'credit',
+                    description: `Escrow refunded for cancelled project: ${project.title}`,
+                    date: new Date()
+                });
+                await client.save();
+                project.escrowStatus = 'refunded';
+            }
         }
 
         // Mark all pending bids as rejected before cancelling
@@ -253,8 +260,69 @@ export const cancelProject = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Project cancelled successfully",
+            message: "Project cancelled successfully" + (project.escrowStatus === 'refunded' ? ". Escrow funds refunded to your wallet." : ""),
             data: { project }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
+
+// ─── COMPLETE PROJECT (Client only) ───
+// Releases locked escrow funds to the hired freelancer.
+export const completeProject = async (req, res) => {
+    try {
+        const project = req.project; // from isProjectParticipant middleware
+
+        // Only the client can mark the project as complete
+        if (project.client.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Access denied: Only the project owner can mark it as complete", data: null });
+        }
+
+        // Project must be in-progress
+        if (project.status !== 'in-progress') {
+            return res.status(400).json({
+                success: false,
+                message: `Project must be 'in-progress' to complete. Current status: '${project.status}'`,
+                data: null
+            });
+        }
+
+        // Escrow must be locked
+        if (project.escrowStatus !== 'locked' || project.escrowAmount <= 0) {
+            return res.status(400).json({ success: false, message: "No locked escrow funds found for this project", data: null });
+        }
+
+        // ─── ESCROW RELEASE: Credit the hired freelancer ───
+        const freelancer = await User.findById(project.hiredFreelancer);
+        if (!freelancer) {
+            return res.status(404).json({ success: false, message: "Hired freelancer not found", data: null });
+        }
+
+        freelancer.walletBalance += project.escrowAmount;
+        freelancer.transactionHistory.push({
+            amount: project.escrowAmount,
+            type: 'credit',
+            description: `Payment received for project: ${project.title}`,
+            date: new Date()
+        });
+        await freelancer.save();
+
+        // Update project
+        project.status = 'completed';
+        project.escrowStatus = 'released';
+        await project.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Project marked as complete. Escrow funds released to the freelancer.",
+            data: {
+                project,
+                escrow: {
+                    releasedAmount: project.escrowAmount,
+                    freelancerNewBalance: freelancer.walletBalance
+                }
+            }
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message, data: null });

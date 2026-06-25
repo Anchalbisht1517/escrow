@@ -43,16 +43,28 @@ app.use(globalLimiter);
 // Rate limiting - stricter for auth routes
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 1000, // Increased for dev testing ease
     message: { success: false, message: 'Too many auth attempts, please try again later.' }
 });
 app.use('/api/auth', authLimiter);
 
 // NoSQL injection sanitization
+// Note: In Express v5, req.query and req.params are read-only getters,
+// so we sanitize req.body by reassignment and mutate query/params in-place.
 app.use((req, res, next) => {
     if (req.body) req.body = mongoSanitize(req.body);
-    if (req.query) req.query = mongoSanitize(req.query);
-    if (req.params) req.params = mongoSanitize(req.params);
+    if (req.query) {
+        const sanitizedQuery = mongoSanitize({ ...req.query });
+        Object.keys(sanitizedQuery).forEach(key => {
+            req.query[key] = sanitizedQuery[key];
+        });
+    }
+    if (req.params) {
+        const sanitizedParams = mongoSanitize({ ...req.params });
+        Object.keys(sanitizedParams).forEach(key => {
+            req.params[key] = sanitizedParams[key];
+        });
+    }
     next();
 });
 

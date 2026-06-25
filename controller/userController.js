@@ -446,3 +446,87 @@ export const getUserWallet = async (req, res) => {
         });
     }
 };
+
+// ─── TOP UP WALLET (Client only — manual/fake top-up for dev, replaced by Razorpay later) ───
+export const topUpWallet = async (req, res) => {
+    try {
+        const { amount } = req.body;
+
+        if (!amount || typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid positive amount is required",
+                data: null
+            });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found", data: null });
+        }
+
+        user.walletBalance += amount;
+        user.transactionHistory.push({
+            amount,
+            type: 'credit',
+            description: `Wallet top-up of ₹${amount}`,
+            date: new Date()
+        });
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Wallet topped up successfully. New balance: ₹${user.walletBalance}`,
+            data: { walletBalance: user.walletBalance }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};
+
+// ─── WITHDRAW FROM WALLET (Freelancer only — manual for now, Razorpay Payout later) ───
+export const withdrawFromWallet = async (req, res) => {
+    try {
+        const { amount } = req.body;
+
+        if (!amount || typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid positive amount is required",
+                data: null
+            });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found", data: null });
+        }
+
+        if (user.walletBalance < amount) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient wallet balance. Available: ₹${user.walletBalance}`,
+                data: null
+            });
+        }
+
+        user.walletBalance -= amount;
+        user.transactionHistory.push({
+            amount,
+            type: 'debit',
+            description: `Withdrawal of ₹${amount} to bank account`,
+            date: new Date()
+        });
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Withdrawal of ₹${amount} initiated. New balance: ₹${user.walletBalance}`,
+            data: { walletBalance: user.walletBalance }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message, data: null });
+    }
+};

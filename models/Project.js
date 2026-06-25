@@ -71,6 +71,18 @@ const projectSchema = new mongoose.Schema({
         index: true
     },
 
+    // ─── ESCROW ───
+    escrowAmount: {
+        type: Number,
+        default: 0
+    },
+
+    escrowStatus: {
+        type: String,
+        enum: ['none', 'locked', 'released', 'refunded'],
+        default: 'none'
+    },
+
     // ─── TIER 2: PRIVATE INFO ───
     // This object is NULL until a freelancer is hired
     privateDetails: {
