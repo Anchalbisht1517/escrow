@@ -33,7 +33,7 @@ export const getPublicProject = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id)
             .select('-privateDetails')
-            .populate('client', 'firstName lastName companyName')
+            .populate('client', 'firstName lastName clientInfo')
             .populate('hiredFreelancer', 'firstName lastName');
 
         if (!project) {
@@ -112,7 +112,7 @@ export const listProjects = async (req, res) => {
         const [projects, total] = await Promise.all([
             Project.find(filter)
                 .select('-privateDetails')
-                .populate('client', 'firstName lastName companyName')
+                .populate('client', 'firstName lastName clientInfo')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitNum),
