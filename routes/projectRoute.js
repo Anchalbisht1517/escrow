@@ -6,7 +6,6 @@ import {
     getPublicProject,
     getPrivateProject,
     listProjects,
-    hireFreelancer,
     editProject,
     cancelProject,
     completeProject
@@ -37,6 +36,6 @@ router.delete('/:id', protect, restrictTo('client'), isProjectParticipant, cance
 router.patch('/:id/complete', protect, restrictTo('client'), isProjectParticipant, completeProject);
 
 // HIRE: Only client can hire a freelancer for their project
-router.patch('/:id/hire', protect, restrictTo('client'), isProjectParticipant, hireFreelancer);
+// Note: Use PATCH /bids/:id/accept instead — it locks escrow atomically
 
 export default router;

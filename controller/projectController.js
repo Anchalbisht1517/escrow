@@ -141,34 +141,6 @@ export const listProjects = async (req, res) => {
     }
 };
 
-// ─── HIRE A FREELANCER (Client only) ───
-export const hireFreelancer = async (req, res) => {
-    try {
-        const { freelancerId } = req.body;
-        const project = req.project; // attached by isProjectParticipant
-
-        if (project.client.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ success: false, message: "Only the client can hire", data: null });
-        }
-
-        if (project.status !== 'open') {
-            return res.status(400).json({ success: false, message: "Project is not open for hiring", data: null });
-        }
-
-        project.hiredFreelancer = freelancerId;
-        project.status = 'in-progress';
-        await project.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Freelancer hired successfully",
-            data: { project }
-        });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: error.message, data: null });
-    }
-};
-
 // ─── EDIT PROJECT (Client owner only, status must be 'open') ───
 // 3.1 - PUT /api/projects/:id
 export const editProject = async (req, res) => {
