@@ -162,6 +162,23 @@ userSchema.pre('save', async function () {
         this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
     }
 
+    // --- Sync duplicate fields: keep top-level and freelancerInfo in sync ---
+    // If top-level field was modified this save, it wins and overwrites the nested one.
+    // If nested was only modified, it wins and syncs back to top-level on next save.
+    if (this.isModified('bio')) {
+        if (!this.freelancerInfo) this.freelancerInfo = {};
+        this.freelancerInfo.bio = this.bio;
+    } else if (this.freelancerInfo && this.freelancerInfo.bio !== this.bio) {
+        this.bio = this.freelancerInfo.bio;
+    }
+
+    if (this.isModified('avgRating')) {
+        if (!this.freelancerInfo) this.freelancerInfo = {};
+        this.freelancerInfo.rating = this.avgRating;
+    } else if (this.freelancerInfo && this.freelancerInfo.rating !== this.avgRating) {
+        this.avgRating = this.freelancerInfo.rating;
+    }
+
     if (!this.isModified('password')) {
         return; // stop password if execution reaches here if password didn't change
     }
