@@ -206,6 +206,8 @@ export const cancelProject = async (req, res) => {
         }
 
         // ─── ESCROW REFUND: If funds were locked, refund the client ───
+        // Also penalise the hired freelancer's reputation — this was an in-progress
+        // project (escrow only locks after acceptBid), so the freelancer is accountable.
         if (project.escrowStatus === 'locked' && project.escrowAmount > 0) {
             const client = await User.findById(project.client);
             if (client) {
@@ -218,6 +220,16 @@ export const cancelProject = async (req, res) => {
                 });
                 await client.save();
                 project.escrowStatus = 'refunded';
+            }
+
+            // Reputation: only in-progress cancellations count against the freelancer.
+            // Open-project cancellations (no hired freelancer) skip this block entirely.
+            if (project.hiredFreelancer) {
+                const freelancer = await User.findById(project.hiredFreelancer);
+                if (freelancer) {
+                    freelancer.abandonedProjectsCount += 1;
+                    await freelancer.save();
+                }
             }
         }
 
@@ -278,6 +290,8 @@ export const completeProject = async (req, res) => {
             description: `Payment received for project: ${project.title}`,
             date: new Date()
         });
+        // Reputation: completed project counts towards freelancer's track record
+        freelancer.completedProjectsCount += 1;
         await freelancer.save();
 
         // Update project
