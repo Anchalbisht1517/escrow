@@ -38,6 +38,22 @@ const userSchema = new mongoose.Schema({
         default: 0
     },
 
+    // ─── Reputation counters (freelancer only) ───
+    // Incremented at project lifecycle endpoints — never decremented.
+    // completedProjectsCount: +1 when client calls completeProject
+    // abandonedProjectsCount: +1 when client cancels a project that was in-progress
+    //   (i.e. escrow was locked — a freelancer was actually hired). Open-project
+    //   cancellations do NOT count against the freelancer.
+    completedProjectsCount: {
+        type: Number,
+        default: 0
+    },
+
+    abandonedProjectsCount: {
+        type: Number,
+        default: 0
+    },
+
     bio: {
         type: String,
         default: ""
