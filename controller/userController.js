@@ -398,7 +398,9 @@ export const getMe = async (req, res) => {
 
 export const getUserPublicProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password');
+        const user = await User.findById(req.params.id).select(
+            '-password -transactionHistory -passwordResetToken -passwordResetExpires'
+        );
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -406,10 +408,22 @@ export const getUserPublicProfile = async (req, res) => {
                 data: null
             });
         }
+
+        // Compute completionRate only for freelancers who have project history
+        const completed = user.completedProjectsCount ?? 0;
+        const abandoned = user.abandonedProjectsCount ?? 0;
+        const total = completed + abandoned;
+        const completionRate = total === 0 ? null : Math.round((completed / total) * 100);
+
         return res.status(200).json({
             success: true,
             message: "User public profile retrieved successfully",
-            data: { user }
+            data: {
+                user,
+                completedProjectsCount: completed,
+                abandonedProjectsCount: abandoned,
+                completionRate
+            }
         });
     } catch (error) {
         return res.status(500).json({
