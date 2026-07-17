@@ -29,3 +29,6 @@ Thumbs.db
 
 # optional
 coverage/
+
+# dev-only scripts that use secrets directly — never commit
+scripts/generateTestSignature.js
