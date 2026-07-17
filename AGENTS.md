@@ -17,7 +17,7 @@ be clean and explainable, not just functional.
 - **Email**: Nodemailer (email verification + password reset)
 - **Security**: `helmet`, `cors`, `express-rate-limit`, `mongo-sanitize` (custom middleware workaround — see note below)
 - **Frontend**: Not yet built. React assumed when the time comes.
-- **Payment (future)**: Razorpay — not integrated yet. Wallet top-up and withdrawal are currently manual/fake stubs.
+- **Payment**: Razorpay — wallet top-up via Payment Gateway integrated (order creation + HMAC signature verification). Freelancer withdrawal is a manual stub pending Razorpay Payouts approval.
 - **AI (future)**: Under consideration — see "Pending Decisions" section. Do NOT build until confirmed.
 
 > **Express v5 note**: `req.query` and `req.params` are read-only getters in Express v5.
@@ -104,6 +104,21 @@ be clean and explainable, not just functional.
 | `status` | `'pending' \| 'accepted' \| 'rejected' \| 'withdrawn'` | Default `'pending'` |
 | Compound index | `{ project: 1, freelancer: 1 }` unique | Prevents a freelancer from bidding twice on the same project |
 
+### `Transaction` — `models/Transaction.js`
+| Field | Type | Notes |
+|---|---|---|
+| `user` | ObjectId (ref User) | Required, indexed |
+| `amount` | Number | Required. Stored in **rupees** (not paise) |
+| `type` | `'credit' \| 'debit'` | Required |
+| `status` | `'pending' \| 'success' \| 'failed'` | Default `'pending'` |
+| `description` | String | Human-readable label |
+| `gateway` | `'razorpay' \| 'manual'` | Required |
+| `razorpayOrderId` | String | Sparse unique index — only set for Razorpay payments |
+| `razorpayPaymentId` | String | Set after successful payment verification |
+| `razorpaySignature` | String | HMAC signature stored for audit trail |
+| `date` | Date | Default `Date.now` |
+| `createdAt`, `updatedAt` | Date | Auto-managed via `{ timestamps: true }` |
+
 ---
 
 ## Routes Implemented So Far
@@ -131,8 +146,11 @@ be clean and explainable, not just functional.
 | Method | Path | Middleware | Controller | Notes |
 |---|---|---|---|---|
 | GET | `/wallet` | `protect` | `getUserWallet` | Returns `walletBalance` + `transactionHistory` |
-| POST | `/wallet/topup` | `protect`, `restrictTo('client')` | `topUpWallet` | **Fake stub** — no real payment. Razorpay later. |
-| POST | `/wallet/withdraw` | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet` | **Fake stub** — no real payout. Razorpay later. |
+| POST | `/wallet/topup` | `protect`, `restrictTo('client')` | `topUpWallet` | **Fake stub** — manual balance increment, kept for dev convenience |
+| POST | `/wallet/topup/order` | `protect`, `restrictTo('client')` | `createRazorpayOrder` | Step 1 — creates Razorpay order, returns `orderId` + `keyId` to frontend |
+| POST | `/wallet/topup/verify` | `protect`, `restrictTo('client')` | `verifyRazorpayPayment` | Step 2 — verifies HMAC signature, credits wallet, writes Transaction record |
+| POST | `/wallet/webhook` | — (public, no auth) | `razorpayWebhook` | Razorpay calls this directly. Needs ngrok for local testing. |
+| POST | `/wallet/withdraw` | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet` | **Fake stub** — no real payout. Razorpay Payouts later. |
 | GET | `/:id/profile` | — (public, no auth) | `getUserPublicProfile` | No auth required |
 
 ### Project Routes — `/api/projects` → `routes/projectRoute.js`
@@ -172,13 +190,15 @@ be clean and explainable, not just functional.
 - [x] **Escrow lock on bid acceptance**: client wallet debited, `escrowAmount` set, `escrowStatus='locked'`, all other bids auto-rejected, `hiredFreelancer` set
 - [x] **Escrow release on project completion**: `escrowAmount` credited to freelancer wallet, `status='completed'`, `escrowStatus='released'`
 - [x] **Escrow refund on project cancellation**: funds returned to client wallet if locked, `escrowStatus='refunded'`, all pending bids rejected
-- [x] **Wallet top-up** (manual/fake stub — clients only)
+- [x] **Wallet top-up** (manual/fake stub — clients only, kept for dev convenience)
 - [x] **Wallet withdrawal** (manual/fake stub — freelancers only)
 - [x] **Public user profile** endpoint (no auth required)
 - [x] **Rate limiting**: global 100 req/15min, auth routes 1000 req/15min (relaxed for dev)
 - [x] **Security headers** via `helmet`
 - [x] **NoSQL injection sanitization** via `mongo-sanitize` with Express v5 workaround
 - [x] **Reputation counters** — `completedProjectsCount` and `abandonedProjectsCount` on the `User` model. Auto-incremented at `completeProject` and `cancelProject` (in-progress only) respectively. Visible on public profile.
+- [x] **Razorpay wallet top-up** — two-step flow: `createRazorpayOrder` creates a Razorpay order and returns `orderId` + `keyId`; `verifyRazorpayPayment` verifies HMAC signature before crediting wallet. Double-credit protection via `Transaction.status` idempotency check.
+- [x] **Standalone Transaction model** (`models/Transaction.js`) — dedicated collection with `razorpayOrderId` (sparse unique), `razorpayPaymentId`, `razorpaySignature`, `status`, and `gateway` fields for full payment audit trail.
 
 ---
 
@@ -186,7 +206,8 @@ be clean and explainable, not just functional.
 
 - [ ] **Profile update endpoint** — no route or controller exists for updating `freelancerInfo` fields (skills, bio, hourlyRate, experience, portfolioLinks). Users cannot edit their own profile data beyond avatar/resume.
 - [ ] **Admin routes** — `isAdmin` middleware exists in `authMiddleware.js` but no admin-specific routes or controllers are wired up.
-- [ ] **Razorpay payment integration** — wallet top-up and withdrawal are currently fake stubs with "Razorpay later" comments. No real payment flow.
+- [ ] **Razorpay webhook** — `razorpayWebhook` controller is implemented but needs ngrok (or a public URL) for local testing. Deferred until deployment or ngrok setup.
+- [ ] **Freelancer withdrawal** — manual admin approval flow not yet built. `withdrawFromWallet` is a fake stub. Razorpay Payouts API requires separate account approval.
 - [ ] **Reviews and ratings** — `freelancerInfo.reviews[]` is defined in the schema but no route/controller exists to submit, list, or aggregate reviews.
 - [ ] **Milestone tracker / contract document / NDA upload** — `privateDetails` fields exist in the schema but no routes exist to upload or update these files.
 - [ ] **Frontend** — not started.
@@ -261,12 +282,25 @@ Two separate user-related route files:
 2. **`companyName` is nested at `clientInfo.companyName`** — `.populate()` must select `'clientInfo'` not `'companyName'` directly. Latent bug fixed in commit `4b985d9`.
 3. **`asyncHandler` is defined but unused** — do not migrate controllers to it unless asked. The inconsistency is known and not an emergency.
 4. **No Mongoose transactions** — local dev has no replica set. Sequential `.save()` calls are intentional.
-5. **Manual wallet top-up is not real money** — it just increments a DB number. All Razorpay references in the codebase are forward-looking comments, not working integrations.
-6. **Two pending decisions above involve a teammate** — treat them as open questions, not committed roadmap items, until this file is updated to say otherwise.
+5. **Two wallet top-up flows coexist** — `POST /wallet/topup` is the old manual stub (kept for dev convenience). `POST /wallet/topup/order` + `POST /wallet/topup/verify` is the real Razorpay flow. Do not remove the stub without explicit instruction.
+6. **Transaction model vs embedded transactionHistory** — Razorpay payments write to both: the standalone `Transaction` collection (for audit/idempotency) AND the embedded `User.transactionHistory` array (for wallet display). Manual stub only writes to `transactionHistory`.
+7. **Two pending decisions above involve a teammate** — treat them as open questions, not committed roadmap items, until this file is updated to say otherwise.
 
 ---
 
 ## CHANGELOG
+
+## 2026-07-17 — Razorpay payment integration
+- **Razorpay wallet top-up implemented**: Two-step flow — `createRazorpayOrder` (Step 1) creates a Razorpay order and returns `orderId` + `keyId` to the frontend; `verifyRazorpayPayment` (Step 2) verifies the HMAC signature using `crypto.createHmac` before crediting the wallet.
+- **Double-spend protection**: `verifyRazorpayPayment` checks `Transaction.status === 'pending'` before crediting. If already `'success'`, returns 200 silently — prevents double credit on duplicate verify calls.
+- **Webhook handler added**: `razorpayWebhook` handles `payment.captured` events. Always returns 200 to stop Razorpay retry loops. Requires ngrok or public URL for local testing — deferred.
+- **Standalone Transaction collection** (`models/Transaction.js`): dedicated model with sparse unique index on `razorpayOrderId`, `status` enum (`pending`/`success`/`failed`), `gateway` enum (`razorpay`/`manual`), and full Razorpay field storage for audit trail.
+- **New routes added** to `routes/usersRoute.js`: `POST /wallet/topup/order`, `POST /wallet/topup/verify`, `POST /wallet/webhook` (no auth).
+- **`config/razorpay.js` created**: Razorpay SDK initialized from env vars, exported as default.
+- **`scripts/generateTestSignature.js` created**: one-time utility to generate valid HMAC signatures for Postman testing without a frontend.
+- **`server.js` updated**: `express.raw({ type: 'application/json' })` registered on `/api/users/wallet/webhook` before `express.json()` so the webhook handler receives the raw Buffer needed for correct signature verification.
+
+---
 
 ## 2026-07-01 — Three bug fixes
 - **`hireFreelancer` removed** (commit `f7007c4`): `PATCH /:id/hire` route and its controller deleted. `acceptBid` is now the sole path for hiring a freelancer + locking escrow. Route table updated.
