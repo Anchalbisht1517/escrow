@@ -2,12 +2,12 @@ import express from 'express';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 import { isProjectParticipant } from '../middleware/isProjectParticipant.js';
 import {
-    placeBid,
-    getProjectBids,
-    acceptBid,
-    editBid,
-    withdrawBid,
-    rejectBid
+  placeBid,
+  getProjectBids,
+  acceptBid,
+  editBid,
+  withdrawBid,
+  rejectBid,
 } from '../controller/bidController.js';
 
 const router = express.Router();
@@ -20,11 +20,23 @@ router.post('/:id/place', protect, restrictTo('freelancer'), placeBid);
 
 // GET BIDS: Client views all bids for their project
 // GET /api/bids/:id/all
-router.get('/:id/all', protect, restrictTo('client'), isProjectParticipant, getProjectBids);
+router.get(
+  '/:id/all',
+  protect,
+  restrictTo('client'),
+  isProjectParticipant,
+  getProjectBids
+);
 
 // ACCEPT BID: Client accepts a specific bid (body: { bidId })
 // PATCH /api/bids/:id/accept
-router.patch('/:id/accept', protect, restrictTo('client'), isProjectParticipant, acceptBid);
+router.patch(
+  '/:id/accept',
+  protect,
+  restrictTo('client'),
+  isProjectParticipant,
+  acceptBid
+);
 
 // ── BID-SCOPED ROUTES (using bid :bidId) ───────────────────────────────────
 

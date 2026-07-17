@@ -2,13 +2,13 @@ import express from 'express';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 import { isProjectParticipant } from '../middleware/isProjectParticipant.js';
 import {
-    createProject,
-    getPublicProject,
-    getPrivateProject,
-    listProjects,
-    editProject,
-    cancelProject,
-    completeProject
+  createProject,
+  getPublicProject,
+  getPrivateProject,
+  listProjects,
+  editProject,
+  cancelProject,
+  completeProject,
 } from '../controller/projectController.js';
 
 const router = express.Router();
@@ -21,7 +21,13 @@ router.get('/', protect, listProjects);
 router.get('/:id/public', protect, getPublicProject);
 
 // PRIVATE: Get full project with privateDetails (client or hired freelancer)
-router.get('/:id/private', protect, restrictTo('client', 'freelancer'), isProjectParticipant, getPrivateProject);
+router.get(
+  '/:id/private',
+  protect,
+  restrictTo('client', 'freelancer'),
+  isProjectParticipant,
+  getPrivateProject
+);
 
 // CREATE: Only clients can post projects
 router.post('/', protect, restrictTo('client'), createProject);
@@ -30,10 +36,22 @@ router.post('/', protect, restrictTo('client'), createProject);
 router.put('/:id', protect, restrictTo('client'), editProject);
 
 // CANCEL: Client cancels a project (auto-refunds escrow if locked)
-router.delete('/:id', protect, restrictTo('client'), isProjectParticipant, cancelProject);
+router.delete(
+  '/:id',
+  protect,
+  restrictTo('client'),
+  isProjectParticipant,
+  cancelProject
+);
 
 // COMPLETE: Client marks project as done — releases escrow to freelancer
-router.patch('/:id/complete', protect, restrictTo('client'), isProjectParticipant, completeProject);
+router.patch(
+  '/:id/complete',
+  protect,
+  restrictTo('client'),
+  isProjectParticipant,
+  completeProject
+);
 
 // HIRE: Only client can hire a freelancer for their project
 // Note: Use PATCH /bids/:id/accept instead — it locks escrow atomically

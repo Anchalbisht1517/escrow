@@ -1,6 +1,7 @@
 # Project: Allie — Escrow Freelance Marketplace
 
 ## What this is
+
 A freelance marketplace (like Upwork) where clients post projects, freelancers bid,
 and payments move through an in-app wallet + escrow system before later integrating
 real money via Razorpay. Built partly for portfolio/interview purposes — code should
@@ -9,6 +10,7 @@ be clean and explainable, not just functional.
 ---
 
 ## Tech Stack
+
 - **Runtime**: Node.js (ES Modules — `"type": "module"` in package.json)
 - **Framework**: Express v5 (not v4 — relevant for read-only `req.query`/`req.params` behaviour; see note below)
 - **Database**: MongoDB via Mongoose v9
@@ -52,127 +54,135 @@ be clean and explainable, not just functional.
 ## Data Models (current state)
 
 ### `User` — `models/User.js`
-| Field | Type | Notes |
-|---|---|---|
-| `firstName`, `lastName` | String | Required |
-| `name` | String | Auto-derived from first+last via `pre('save')` hook |
-| `email` | String | Unique, lowercase, trimmed. Required. |
-| `password` | String | Bcrypt-hashed (salt=10) via `pre('save')` hook. Only re-hashes when modified. |
-| `role` | `'client' \| 'freelancer' \| 'admin'` | Required, indexed |
-| `walletBalance` | Number | Default 0 |
-| `isActive` | Boolean | Default `true`. Inactive users blocked at `protect` middleware. |
-| `isVerified` | Boolean | Default `false`. Must be `true` to log in. Set by email verification flow. |
-| `avatar` | String | Local path, e.g., `/uploads/avatars/avatar-xxx.jpg` |
-| `avatarPublicId` | String | Filename only, kept for reference |
-| `transactionHistory` | Array | `[{ amount, type: 'credit'\|'debit', description, date }]` — embedded, unbounded |
-| `clientInfo` | Object | `{ companyName, companyDesc }` |
-| `freelancerInfo` | Object | `{ skills[], bio, experience, hourlyRate, portfolioLinks[], resume: { public_id, url }, rating, reviews[] }` — `rating` and `bio` are kept for structural grouping. Synced TO top-level `avgRating` / `bio` fields via `pre('save')` hook. |
-| `freelancerInfo.reviews[]` | Array | `[{ fromUser (ref User), rating (1–5), comment, createdAt }]` |
-| `avgRating`, `totalReviews` | Number | Top-level canonical. Synced FROM `freelancerInfo.rating` via `pre('save')` hook — top-level wins on conflict. |
-| `completedProjectsCount` | Number | Default 0. Incremented (+1) when client calls `completeProject`. Freelancer-only in practice; not role-restricted at schema level. |
-| `abandonedProjectsCount` | Number | Default 0. Incremented (+1) when client cancels a project that was `in-progress` (escrow was locked). Open-project cancellations do NOT increment this — only hires that were abandoned mid-flight. |
-| `bio`, `portfolio` | String / Array | Top-level canonical. Synced FROM `freelancerInfo.bio` via `pre('save')` hook — top-level wins on conflict. |
-| `passwordResetToken` | String | SHA-256 hashed token, indexed |
-| `passwordResetExpires` | Date | 10-minute expiry window |
-| `address`, `city`, `zipCode`, `phoneNo` | String | Optional contact fields |
+
+| Field                                   | Type                                  | Notes                                                                                                                                                                                                                                      |
+| --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `firstName`, `lastName`                 | String                                | Required                                                                                                                                                                                                                                   |
+| `name`                                  | String                                | Auto-derived from first+last via `pre('save')` hook                                                                                                                                                                                        |
+| `email`                                 | String                                | Unique, lowercase, trimmed. Required.                                                                                                                                                                                                      |
+| `password`                              | String                                | Bcrypt-hashed (salt=10) via `pre('save')` hook. Only re-hashes when modified.                                                                                                                                                              |
+| `role`                                  | `'client' \| 'freelancer' \| 'admin'` | Required, indexed                                                                                                                                                                                                                          |
+| `walletBalance`                         | Number                                | Default 0                                                                                                                                                                                                                                  |
+| `isActive`                              | Boolean                               | Default `true`. Inactive users blocked at `protect` middleware.                                                                                                                                                                            |
+| `isVerified`                            | Boolean                               | Default `false`. Must be `true` to log in. Set by email verification flow.                                                                                                                                                                 |
+| `avatar`                                | String                                | Local path, e.g., `/uploads/avatars/avatar-xxx.jpg`                                                                                                                                                                                        |
+| `avatarPublicId`                        | String                                | Filename only, kept for reference                                                                                                                                                                                                          |
+| `transactionHistory`                    | Array                                 | `[{ amount, type: 'credit'\|'debit', description, date }]` — embedded, unbounded                                                                                                                                                           |
+| `clientInfo`                            | Object                                | `{ companyName, companyDesc }`                                                                                                                                                                                                             |
+| `freelancerInfo`                        | Object                                | `{ skills[], bio, experience, hourlyRate, portfolioLinks[], resume: { public_id, url }, rating, reviews[] }` — `rating` and `bio` are kept for structural grouping. Synced TO top-level `avgRating` / `bio` fields via `pre('save')` hook. |
+| `freelancerInfo.reviews[]`              | Array                                 | `[{ fromUser (ref User), rating (1–5), comment, createdAt }]`                                                                                                                                                                              |
+| `avgRating`, `totalReviews`             | Number                                | Top-level canonical. Synced FROM `freelancerInfo.rating` via `pre('save')` hook — top-level wins on conflict.                                                                                                                              |
+| `completedProjectsCount`                | Number                                | Default 0. Incremented (+1) when client calls `completeProject`. Freelancer-only in practice; not role-restricted at schema level.                                                                                                         |
+| `abandonedProjectsCount`                | Number                                | Default 0. Incremented (+1) when client cancels a project that was `in-progress` (escrow was locked). Open-project cancellations do NOT increment this — only hires that were abandoned mid-flight.                                        |
+| `bio`, `portfolio`                      | String / Array                        | Top-level canonical. Synced FROM `freelancerInfo.bio` via `pre('save')` hook — top-level wins on conflict.                                                                                                                                 |
+| `passwordResetToken`                    | String                                | SHA-256 hashed token, indexed                                                                                                                                                                                                              |
+| `passwordResetExpires`                  | Date                                  | 10-minute expiry window                                                                                                                                                                                                                    |
+| `address`, `city`, `zipCode`, `phoneNo` | String                                | Optional contact fields                                                                                                                                                                                                                    |
 
 ### `Project` — `models/Project.js`
-| Field | Type | Notes |
-|---|---|---|
-| `client` | ObjectId (ref User) | Required, indexed |
-| `hiredFreelancer` | ObjectId (ref User) | Default `null`, indexed |
-| `title`, `description` | String | Required |
-| `budgetMin`, `budgetMax` | Number | Required |
-| `budgetType` | `'fixed' \| 'hourly'` | Required |
-| `skillsRequired` | `[String]` | Default `[]` |
-| `deadline` | Date | Optional |
-| `totalBids` | Number | Auto-incremented on `placeBid`, decremented on `withdrawBid` |
-| `acceptedBidId` | ObjectId (ref Bid) | Set when a bid is accepted |
-| `status` | `'open' \| 'in-progress' \| 'completed' \| 'cancelled'` | Default `'open'`, indexed |
-| `escrowAmount` | Number | Default 0. Set to bid amount when bid is accepted. |
-| `escrowStatus` | `'none' \| 'locked' \| 'released' \| 'refunded'` | Default `'none'` |
-| `privateDetails` | Object | `{ contractDocument, milestoneTracker, nda, companyInternalNotes }` — each file field has `{ public_id, url }` |
+
+| Field                    | Type                                                    | Notes                                                                                                          |
+| ------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `client`                 | ObjectId (ref User)                                     | Required, indexed                                                                                              |
+| `hiredFreelancer`        | ObjectId (ref User)                                     | Default `null`, indexed                                                                                        |
+| `title`, `description`   | String                                                  | Required                                                                                                       |
+| `budgetMin`, `budgetMax` | Number                                                  | Required                                                                                                       |
+| `budgetType`             | `'fixed' \| 'hourly'`                                   | Required                                                                                                       |
+| `skillsRequired`         | `[String]`                                              | Default `[]`                                                                                                   |
+| `deadline`               | Date                                                    | Optional                                                                                                       |
+| `totalBids`              | Number                                                  | Auto-incremented on `placeBid`, decremented on `withdrawBid`                                                   |
+| `acceptedBidId`          | ObjectId (ref Bid)                                      | Set when a bid is accepted                                                                                     |
+| `status`                 | `'open' \| 'in-progress' \| 'completed' \| 'cancelled'` | Default `'open'`, indexed                                                                                      |
+| `escrowAmount`           | Number                                                  | Default 0. Set to bid amount when bid is accepted.                                                             |
+| `escrowStatus`           | `'none' \| 'locked' \| 'released' \| 'refunded'`        | Default `'none'`                                                                                               |
+| `privateDetails`         | Object                                                  | `{ contractDocument, milestoneTracker, nda, companyInternalNotes }` — each file field has `{ public_id, url }` |
 
 ### `Bid` — `models/Bid.js`
-| Field | Type | Notes |
-|---|---|---|
-| `project` | ObjectId (ref Project) | Required, indexed |
-| `freelancer` | ObjectId (ref User) | Required, indexed |
-| `amount` | Number | Required |
-| `estimatedDays` | Number | Required |
-| `coverLetter` | String | Required |
-| `status` | `'pending' \| 'accepted' \| 'rejected' \| 'withdrawn'` | Default `'pending'` |
-| Compound index | `{ project: 1, freelancer: 1 }` unique | Prevents a freelancer from bidding twice on the same project |
+
+| Field           | Type                                                   | Notes                                                        |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| `project`       | ObjectId (ref Project)                                 | Required, indexed                                            |
+| `freelancer`    | ObjectId (ref User)                                    | Required, indexed                                            |
+| `amount`        | Number                                                 | Required                                                     |
+| `estimatedDays` | Number                                                 | Required                                                     |
+| `coverLetter`   | String                                                 | Required                                                     |
+| `status`        | `'pending' \| 'accepted' \| 'rejected' \| 'withdrawn'` | Default `'pending'`                                          |
+| Compound index  | `{ project: 1, freelancer: 1 }` unique                 | Prevents a freelancer from bidding twice on the same project |
 
 ### `Transaction` — `models/Transaction.js`
-| Field | Type | Notes |
-|---|---|---|
-| `user` | ObjectId (ref User) | Required, indexed |
-| `amount` | Number | Required. Stored in **rupees** (not paise) |
-| `type` | `'credit' \| 'debit'` | Required |
-| `status` | `'pending' \| 'success' \| 'failed'` | Default `'pending'` |
-| `description` | String | Human-readable label |
-| `gateway` | `'razorpay' \| 'manual'` | Required |
-| `razorpayOrderId` | String | Sparse unique index — only set for Razorpay payments |
-| `razorpayPaymentId` | String | Set after successful payment verification |
-| `razorpaySignature` | String | HMAC signature stored for audit trail |
-| `date` | Date | Default `Date.now` |
-| `createdAt`, `updatedAt` | Date | Auto-managed via `{ timestamps: true }` |
+
+| Field                    | Type                                 | Notes                                                |
+| ------------------------ | ------------------------------------ | ---------------------------------------------------- |
+| `user`                   | ObjectId (ref User)                  | Required, indexed                                    |
+| `amount`                 | Number                               | Required. Stored in **rupees** (not paise)           |
+| `type`                   | `'credit' \| 'debit'`                | Required                                             |
+| `status`                 | `'pending' \| 'success' \| 'failed'` | Default `'pending'`                                  |
+| `description`            | String                               | Human-readable label                                 |
+| `gateway`                | `'razorpay' \| 'manual'`             | Required                                             |
+| `razorpayOrderId`        | String                               | Sparse unique index — only set for Razorpay payments |
+| `razorpayPaymentId`      | String                               | Set after successful payment verification            |
+| `razorpaySignature`      | String                               | HMAC signature stored for audit trail                |
+| `date`                   | Date                                 | Default `Date.now`                                   |
+| `createdAt`, `updatedAt` | Date                                 | Auto-managed via `{ timestamps: true }`              |
 
 ---
 
 ## Routes Implemented So Far
 
 ### Auth Routes — `/api/auth` → `routes/userRoute.js`
-| Method | Path | Middleware | Controller | Notes |
-|---|---|---|---|---|
-| POST | `/register` | — | `register` | Creates user, sends verification email. Does NOT log in. |
-| GET | `/verify-email` | — | `verifyEmailController` | Token passed as query param |
-| POST | `/login` | — | `login` | Sets access + refresh token cookies |
-| POST | `/refresh` | — | `refresh` | Issues new access token from refresh cookie |
-| POST | `/logout` | `protect` | `logout` | Clears both cookies |
-| GET | `/me` | `protect` | `getMe` | Returns `req.user` |
-| POST | `/forgot-password` | — | `forgotPassword` | Sends reset email with hashed token |
-| POST | `/reset-password/:token` | — | `resetPassword` | Validates token, sets new password, triggers pre-save hash |
-| GET | `/client/profile` | `protect`, `restrictTo('client')` | `getUserProfile` | Returns `req.user` |
-| GET | `/freelancer/profile` | `protect`, `restrictTo('freelancer')` | `getUserProfile` | Returns `req.user` |
-| POST | `/avatar` | `protect`, multer | `uploadAvatar` | Deletes old file, saves new path |
-| PUT | `/avatar` | `protect`, multer | `uploadAvatar` | Same as POST — idempotent upsert |
-| DELETE | `/deleteAvatar` | `protect` | `deleteAvatar` | Removes local file, clears field |
-| POST | `/resume` | `protect`, `restrictTo('freelancer')`, multer | `uploadResume` | PDF only, 5MB limit |
-| DELETE | `/resume` | `protect`, `restrictTo('freelancer')` | `deleteResume` | Removes local file |
+
+| Method | Path                     | Middleware                                    | Controller              | Notes                                                      |
+| ------ | ------------------------ | --------------------------------------------- | ----------------------- | ---------------------------------------------------------- |
+| POST   | `/register`              | —                                             | `register`              | Creates user, sends verification email. Does NOT log in.   |
+| GET    | `/verify-email`          | —                                             | `verifyEmailController` | Token passed as query param                                |
+| POST   | `/login`                 | —                                             | `login`                 | Sets access + refresh token cookies                        |
+| POST   | `/refresh`               | —                                             | `refresh`               | Issues new access token from refresh cookie                |
+| POST   | `/logout`                | `protect`                                     | `logout`                | Clears both cookies                                        |
+| GET    | `/me`                    | `protect`                                     | `getMe`                 | Returns `req.user`                                         |
+| POST   | `/forgot-password`       | —                                             | `forgotPassword`        | Sends reset email with hashed token                        |
+| POST   | `/reset-password/:token` | —                                             | `resetPassword`         | Validates token, sets new password, triggers pre-save hash |
+| GET    | `/client/profile`        | `protect`, `restrictTo('client')`             | `getUserProfile`        | Returns `req.user`                                         |
+| GET    | `/freelancer/profile`    | `protect`, `restrictTo('freelancer')`         | `getUserProfile`        | Returns `req.user`                                         |
+| POST   | `/avatar`                | `protect`, multer                             | `uploadAvatar`          | Deletes old file, saves new path                           |
+| PUT    | `/avatar`                | `protect`, multer                             | `uploadAvatar`          | Same as POST — idempotent upsert                           |
+| DELETE | `/deleteAvatar`          | `protect`                                     | `deleteAvatar`          | Removes local file, clears field                           |
+| POST   | `/resume`                | `protect`, `restrictTo('freelancer')`, multer | `uploadResume`          | PDF only, 5MB limit                                        |
+| DELETE | `/resume`                | `protect`, `restrictTo('freelancer')`         | `deleteResume`          | Removes local file                                         |
 
 ### User/Wallet Routes — `/api/users` → `routes/usersRoute.js`
-| Method | Path | Middleware | Controller | Notes |
-|---|---|---|---|---|
-| GET | `/wallet` | `protect` | `getUserWallet` | Returns `walletBalance` + `transactionHistory` |
-| POST | `/wallet/topup` | `protect`, `restrictTo('client')` | `topUpWallet` | **Fake stub** — manual balance increment, kept for dev convenience |
-| POST | `/wallet/topup/order` | `protect`, `restrictTo('client')` | `createRazorpayOrder` | Step 1 — creates Razorpay order, returns `orderId` + `keyId` to frontend |
-| POST | `/wallet/topup/verify` | `protect`, `restrictTo('client')` | `verifyRazorpayPayment` | Step 2 — verifies HMAC signature, credits wallet, writes Transaction record |
-| POST | `/wallet/webhook` | — (public, no auth) | `razorpayWebhook` | Razorpay calls this directly. Needs ngrok for local testing. |
-| POST | `/wallet/withdraw` | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet` | **Fake stub** — no real payout. Razorpay Payouts later. |
-| GET | `/:id/profile` | — (public, no auth) | `getUserPublicProfile` | No auth required |
+
+| Method | Path                   | Middleware                            | Controller              | Notes                                                                       |
+| ------ | ---------------------- | ------------------------------------- | ----------------------- | --------------------------------------------------------------------------- |
+| GET    | `/wallet`              | `protect`                             | `getUserWallet`         | Returns `walletBalance` + `transactionHistory`                              |
+| POST   | `/wallet/topup`        | `protect`, `restrictTo('client')`     | `topUpWallet`           | **Fake stub** — manual balance increment, kept for dev convenience          |
+| POST   | `/wallet/topup/order`  | `protect`, `restrictTo('client')`     | `createRazorpayOrder`   | Step 1 — creates Razorpay order, returns `orderId` + `keyId` to frontend    |
+| POST   | `/wallet/topup/verify` | `protect`, `restrictTo('client')`     | `verifyRazorpayPayment` | Step 2 — verifies HMAC signature, credits wallet, writes Transaction record |
+| POST   | `/wallet/webhook`      | — (public, no auth)                   | `razorpayWebhook`       | Razorpay calls this directly. Needs ngrok for local testing.                |
+| POST   | `/wallet/withdraw`     | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet`    | **Fake stub** — no real payout. Razorpay Payouts later.                     |
+| GET    | `/:id/profile`         | — (public, no auth)                   | `getUserPublicProfile`  | No auth required                                                            |
 
 ### Project Routes — `/api/projects` → `routes/projectRoute.js`
-| Method | Path | Middleware | Controller | Notes |
-|---|---|---|---|---|
-| GET | `/` | `protect` | `listProjects` | Pagination + filtering: `?skills=react,node&budgetMin=500&budgetMax=5000&search=ecommerce&page=1&limit=10` |
-| GET | `/:id/public` | `protect` | `getPublicProject` | Excludes `privateDetails` |
-| GET | `/:id/private` | `protect`, `restrictTo('client','freelancer')`, `isProjectParticipant` | `getPrivateProject` | Full doc including `privateDetails` |
-| POST | `/` | `protect`, `restrictTo('client')` | `createProject` | |
-| PUT | `/:id` | `protect`, `restrictTo('client')` | `editProject` | Only allowed when `status === 'open'` |
-| DELETE | `/:id` | `protect`, `restrictTo('client')`, `isProjectParticipant` | `cancelProject` | Auto-refunds escrow if locked |
-| PATCH | `/:id/complete` | `protect`, `restrictTo('client')`, `isProjectParticipant` | `completeProject` | Releases locked escrow to freelancer |
+
+| Method | Path            | Middleware                                                             | Controller          | Notes                                                                                                      |
+| ------ | --------------- | ---------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| GET    | `/`             | `protect`                                                              | `listProjects`      | Pagination + filtering: `?skills=react,node&budgetMin=500&budgetMax=5000&search=ecommerce&page=1&limit=10` |
+| GET    | `/:id/public`   | `protect`                                                              | `getPublicProject`  | Excludes `privateDetails`                                                                                  |
+| GET    | `/:id/private`  | `protect`, `restrictTo('client','freelancer')`, `isProjectParticipant` | `getPrivateProject` | Full doc including `privateDetails`                                                                        |
+| POST   | `/`             | `protect`, `restrictTo('client')`                                      | `createProject`     |                                                                                                            |
+| PUT    | `/:id`          | `protect`, `restrictTo('client')`                                      | `editProject`       | Only allowed when `status === 'open'`                                                                      |
+| DELETE | `/:id`          | `protect`, `restrictTo('client')`, `isProjectParticipant`              | `cancelProject`     | Auto-refunds escrow if locked                                                                              |
+| PATCH  | `/:id/complete` | `protect`, `restrictTo('client')`, `isProjectParticipant`              | `completeProject`   | Releases locked escrow to freelancer                                                                       |
 
 ### Bid Routes — `/api/bids` → `routes/bidRoute.js`
-| Method | Path | Middleware | Controller | Notes |
-|---|---|---|---|---|
-| POST | `/:id/place` | `protect`, `restrictTo('freelancer')` | `placeBid` | `:id` = projectId. Body: `{ projectId, amount, coverLetter, estimatedDays }` |
-| GET | `/:id/all` | `protect`, `restrictTo('client')`, `isProjectParticipant` | `getProjectBids` | Sorted by amount ascending (lowest bid first) |
-| PATCH | `/:id/accept` | `protect`, `restrictTo('client')`, `isProjectParticipant` | `acceptBid` | Locks escrow, sets `hiredFreelancer`, rejects all other bids atomically |
-| PUT | `/bid/:bidId` | `protect`, `restrictTo('freelancer')` | `editBid` | Only when `status === 'pending'`. Whitelisted fields: `amount`, `coverLetter`, `estimatedDays`. |
-| DELETE | `/bid/:bidId` | `protect`, `restrictTo('freelancer')` | `withdrawBid` | Only when `status === 'pending'`. Decrements `totalBids`. |
-| PATCH | `/bid/:bidId/reject` | `protect`, `restrictTo('client')` | `rejectBid` | Only when `status === 'pending'`. |
+
+| Method | Path                 | Middleware                                                | Controller       | Notes                                                                                           |
+| ------ | -------------------- | --------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| POST   | `/:id/place`         | `protect`, `restrictTo('freelancer')`                     | `placeBid`       | `:id` = projectId. Body: `{ projectId, amount, coverLetter, estimatedDays }`                    |
+| GET    | `/:id/all`           | `protect`, `restrictTo('client')`, `isProjectParticipant` | `getProjectBids` | Sorted by amount ascending (lowest bid first)                                                   |
+| PATCH  | `/:id/accept`        | `protect`, `restrictTo('client')`, `isProjectParticipant` | `acceptBid`      | Locks escrow, sets `hiredFreelancer`, rejects all other bids atomically                         |
+| PUT    | `/bid/:bidId`        | `protect`, `restrictTo('freelancer')`                     | `editBid`        | Only when `status === 'pending'`. Whitelisted fields: `amount`, `coverLetter`, `estimatedDays`. |
+| DELETE | `/bid/:bidId`        | `protect`, `restrictTo('freelancer')`                     | `withdrawBid`    | Only when `status === 'pending'`. Decrements `totalBids`.                                       |
+| PATCH  | `/bid/:bidId/reject` | `protect`, `restrictTo('client')`                         | `rejectBid`      | Only when `status === 'pending'`.                                                               |
 
 ---
 
@@ -221,7 +231,9 @@ be clean and explainable, not just functional.
 > **Do not implement anything in this section until explicitly confirmed by both team members.**
 
 ### AI Feature Integration
+
 Under consideration:
+
 1. AI-generated bid/proposal drafts for freelancers
 2. AI-based fraud/scam detection on new project postings
 
@@ -229,6 +241,7 @@ Both would use Gemini 2.5 Flash (free tier) via simple prompt calls — no ML tr
 **Neither has been discussed with the teammate yet. Do not start implementing AI features until this is confirmed by both team members.**
 
 ### Security Deposit from Freelancers
+
 **Decision closed (2026-07-01):** Security deposit idea officially rejected by both team members. Reasoning: creates a barrier to entry for freelancer acquisition on a new platform. Replaced by the reputation counter system (`completedProjectsCount` / `abandonedProjectsCount`) documented in Completed Features above.
 
 ---
@@ -236,29 +249,35 @@ Both would use Gemini 2.5 Flash (free tier) via simple prompt calls — no ML tr
 ## Conventions
 
 ### Controller Pattern
+
 - All controllers are `async (req, res) => { try { ... } catch (error) { return res.status(500).json(...) } }`
 - Response shape: `{ success: boolean, message: string, data: object | null }`
 - Controllers that follow `isProjectParticipant` middleware use `req.project` directly — do NOT re-query the DB for the same project
 
 ### Middleware Chain Order
+
 ```
 protect → restrictTo(...roles) → isProjectParticipant → controller
 ```
+
 Each layer is optional depending on the route's requirements.
 
 ### Token Strategy
+
 - Access token: 15 minutes, env var `SECRET_KEY`
 - Refresh token: 7 days, env var `REFRESH_SECRET`
 - Both delivered as `httpOnly`, `sameSite: 'strict'` cookies
 - `secure: true` only in production (`NODE_ENV === 'production'`)
 
 ### File Storage
+
 - Files stored locally in `uploads/avatars/` and `uploads/resumes/`
 - Filenames: `avatar-{timestamp}-{random}.{ext}` and `resume-{timestamp}-{random}.{ext}`
 - Old files are deleted from disk before saving new ones (in upload handlers)
 - No Cloudinary or S3 — purely local disk for now
 
 ### Environment Variables Required
+
 ```
 PORT
 MONGO_URI
@@ -267,10 +286,13 @@ REFRESH_SECRET    # JWT refresh token secret
 NODE_ENV
 FRONTEND_URL      # used for CORS in production
 ```
+
 Additional email-related env vars are required by Nodemailer in `emailVerify/verifyEmail.js`.
 
 ### Route File Split
+
 Two separate user-related route files:
+
 - `routes/userRoute.js` → mounted at `/api/auth` — handles auth, profile reads, file uploads
 - `routes/usersRoute.js` → mounted at `/api/users` — handles wallet and public profile by ID
 
@@ -291,6 +313,7 @@ Two separate user-related route files:
 ## CHANGELOG
 
 ## 2026-07-17 — Razorpay payment integration
+
 - **Razorpay wallet top-up implemented**: Two-step flow — `createRazorpayOrder` (Step 1) creates a Razorpay order and returns `orderId` + `keyId` to the frontend; `verifyRazorpayPayment` (Step 2) verifies the HMAC signature using `crypto.createHmac` before crediting the wallet.
 - **Double-spend protection**: `verifyRazorpayPayment` checks `Transaction.status === 'pending'` before crediting. If already `'success'`, returns 200 silently — prevents double credit on duplicate verify calls.
 - **Webhook handler added**: `razorpayWebhook` handles `payment.captured` events. Always returns 200 to stop Razorpay retry loops. Requires ngrok or public URL for local testing — deferred.
@@ -303,6 +326,7 @@ Two separate user-related route files:
 ---
 
 ## 2026-07-01 — Three bug fixes
+
 - **`hireFreelancer` removed** (commit `f7007c4`): `PATCH /:id/hire` route and its controller deleted. `acceptBid` is now the sole path for hiring a freelancer + locking escrow. Route table updated.
 - **`companyName` populate bug fixed** (commit `4b985d9`): `getPublicProject` and `listProjects` now populate `clientInfo` (not `companyName` directly). Noted in Important Context #2.
 - **Duplicate User field sync added** (commit `9db9f1b`): `pre('save')` hook added to `User.js` keeping `bio` ↔ `freelancerInfo.bio` and `avgRating` ↔ `freelancerInfo.rating` in sync, with top-level fields winning on conflict. Data Models table updated to reflect canonical source.
@@ -311,6 +335,7 @@ Two separate user-related route files:
 ---
 
 ## 2026-06-30 — AGENTS.md created — Initial persistent memory document
+
 Full codebase scan performed across all models, routes, controllers, middleware, utils, and config files.
 Document captures the current state of the project as of this date, including known issues (latent `companyName` populate bug, `asyncHandler` unused, `hireFreelancer` vs `acceptBid` inconsistency), pending decisions (AI features, security deposit), and all architecture rules.
 Previous AGENTS.md existed with corrupted/garbled lines and inaccuracies — replaced entirely with this scan-based version.

@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import 'dotenv/config';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 
@@ -13,8 +13,8 @@ export const verifyEmailController = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
-        data: null
+        message: 'User not found',
+        data: null,
       });
     }
 
@@ -23,15 +23,14 @@ export const verifyEmailController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Email verified",
-      data: null
+      message: 'Email verified',
+      data: null,
     });
-
-  } catch (err) {
+  } catch (_err) {
     return res.status(400).json({
       success: false,
-      message: "Invalid or expired token",
-      data: null
+      message: 'Invalid or expired token',
+      data: null,
     });
   }
 };
