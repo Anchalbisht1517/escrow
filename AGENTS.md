@@ -209,6 +209,9 @@ be clean and explainable, not just functional.
 - [x] **Reputation counters** — `completedProjectsCount` and `abandonedProjectsCount` on the `User` model. Auto-incremented at `completeProject` and `cancelProject` (in-progress only) respectively. Visible on public profile.
 - [x] **Razorpay wallet top-up** — two-step flow: `createRazorpayOrder` creates a Razorpay order and returns `orderId` + `keyId`; `verifyRazorpayPayment` verifies HMAC signature before crediting wallet. Double-credit protection via `Transaction.status` idempotency check.
 - [x] **Standalone Transaction model** (`models/Transaction.js`) — dedicated collection with `razorpayOrderId` (sparse unique), `razorpayPaymentId`, `razorpaySignature`, `status`, and `gateway` fields for full payment audit trail.
+- [x] **ESLint + Prettier** — flat config (`eslint.config.js`), 0 errors, 1 known false positive (`bcrypt` import in `userController.js` — used inside `User` model `matchPassword` method, not directly in controller)
+- [x] **Centralized error handler** (`middleware/errorHandler.js`) — handles Mongoose `ValidationError`, `CastError`, duplicate key (409), JWT errors, custom `statusCode`, dev-only stack trace
+- [x] **Health check endpoint** `GET /health` — returns database connection state + environment + timestamp, bypasses auth and rate limiting
 
 ---
 
@@ -296,6 +299,15 @@ Two separate user-related route files:
 - `routes/userRoute.js` → mounted at `/api/auth` — handles auth, profile reads, file uploads
 - `routes/usersRoute.js` → mounted at `/api/users` — handles wallet and public profile by ID
 
+### Linting and Formatting
+
+- ESLint flat config at `eslint.config.js` (ESM format, `eslint-plugin-n` for Node.js rules)
+- Prettier config at `.prettierrc` (`singleQuote`, `semi`, `tabWidth: 2`, `trailingComma: 'es5'`, `printWidth: 80`)
+- Run lint: `npm run lint`
+- Run fix: `npm run lint:fix`
+- Run format: `npm run format`
+- Known false positive: `bcrypt` unused warning in `userController.js` — ignore, it is used inside the `User` model's `matchPassword` instance method
+
 ---
 
 ## Important Context for AI Agents
@@ -311,6 +323,16 @@ Two separate user-related route files:
 ---
 
 ## CHANGELOG
+
+## 2026-07-17 — Pre-frontend quality setup
+
+- **ESLint + Prettier configured**: Flat config (`eslint.config.js`) with `@eslint/js` recommended, `eslint-plugin-n` for Node.js rules, `eslint-config-prettier` to disable conflicting rules, and `prettier/prettier` as a lint rule. `.prettierrc` and `.prettierignore` created. Three npm scripts added: `lint`, `lint:fix`, `format`.
+- **0 lint errors** in full codebase after auto-fix. 1 known false positive (`bcrypt` import in `userController.js`).
+- **Centralized error handler** (`middleware/errorHandler.js`) replaced the old basic version: now handles Mongoose `ValidationError` (400), `CastError` (400), duplicate key `11000` (409 with field name), `JsonWebTokenError` (401), `TokenExpiredError` (401), custom `err.statusCode`, and dev-only `stack` trace in response.
+- **Health check endpoint** `GET /health` added to `server.js` before all API routes. Reports `mongoose.connection.readyState`, `NODE_ENV`, and ISO timestamp. Returns 200 when DB connected, 503 when not. No auth, no rate limit.
+- `mongoose` imported directly in `server.js` for health check (previously only used inside `config/db.js`).
+
+---
 
 ## 2026-07-17 — Razorpay payment integration
 
