@@ -19,6 +19,9 @@ validateEnv();
 const port = process.env.PORT || 5000;
 const app = express();
 
+// Webhook route must receive raw Buffer for HMAC signature verification
+// This MUST be registered before express.json() so it takes precedence
+app.use('/api/users/wallet/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static('uploads'));
