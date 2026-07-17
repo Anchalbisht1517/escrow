@@ -141,13 +141,15 @@ be clean and explainable, not just functional.
 | GET    | `/me`                    | `protect`                                     | `getMe`                 | Returns `req.user`                                         |
 | POST   | `/forgot-password`       | —                                             | `forgotPassword`        | Sends reset email with hashed token                        |
 | POST   | `/reset-password/:token` | —                                             | `resetPassword`         | Validates token, sets new password, triggers pre-save hash |
-| GET    | `/client/profile`        | `protect`, `restrictTo('client')`             | `getUserProfile`        | Returns `req.user`                                         |
-| GET    | `/freelancer/profile`    | `protect`, `restrictTo('freelancer')`         | `getUserProfile`        | Returns `req.user`                                         |
-| POST   | `/avatar`                | `protect`, multer                             | `uploadAvatar`          | Deletes old file, saves new path                           |
-| PUT    | `/avatar`                | `protect`, multer                             | `uploadAvatar`          | Same as POST — idempotent upsert                           |
-| DELETE | `/deleteAvatar`          | `protect`                                     | `deleteAvatar`          | Removes local file, clears field                           |
-| POST   | `/resume`                | `protect`, `restrictTo('freelancer')`, multer | `uploadResume`          | PDF only, 5MB limit                                        |
-| DELETE | `/resume`                | `protect`, `restrictTo('freelancer')`         | `deleteResume`          | Removes local file                                         |
+| GET    | `/client/profile`        | `protect`, `restrictTo('client')`             | `getUserProfile`           | Returns `req.user`                                         |
+| GET    | `/freelancer/profile`    | `protect`, `restrictTo('freelancer')`         | `getUserProfile`           | Returns `req.user`                                         |
+| PUT    | `/client/profile`        | `protect`, `restrictTo('client')`             | `updateClientProfile`      | Updates clientInfo + contact fields. Whitelist pattern.    |
+| PUT    | `/freelancer/profile`    | `protect`, `restrictTo('freelancer')`         | `updateFreelancerProfile`  | Updates freelancerInfo + contact fields. Whitelist pattern.|
+| POST   | `/avatar`                | `protect`, multer                             | `uploadAvatar`             | Deletes old file, saves new path                           |
+| PUT    | `/avatar`                | `protect`, multer                             | `uploadAvatar`             | Same as POST — idempotent upsert                           |
+| DELETE | `/deleteAvatar`          | `protect`                                     | `deleteAvatar`             | Removes local file, clears field                           |
+| POST   | `/resume`                | `protect`, `restrictTo('freelancer')`, multer | `uploadResume`             | PDF only, 5MB limit                                        |
+| DELETE | `/resume`                | `protect`, `restrictTo('freelancer')`         | `deleteResume`             | Removes local file                                         |
 
 ### User/Wallet Routes — `/api/users` → `routes/usersRoute.js`
 
@@ -212,12 +214,13 @@ be clean and explainable, not just functional.
 - [x] **ESLint + Prettier** — flat config (`eslint.config.js`), 0 errors, 1 known false positive (`bcrypt` import in `userController.js` — used inside `User` model `matchPassword` method, not directly in controller)
 - [x] **Centralized error handler** (`middleware/errorHandler.js`) — handles Mongoose `ValidationError`, `CastError`, duplicate key (409), JWT errors, custom `statusCode`, dev-only stack trace
 - [x] **Health check endpoint** `GET /health` — returns database connection state + environment + timestamp, bypasses auth and rate limiting
+- [x] **Freelancer profile update** — `PUT /api/auth/freelancer/profile` (`protect`, `restrictTo('freelancer')`) — updates `freelancerInfo.skills`, `bio`, `hourlyRate`, `experience`, `portfolioLinks` + top-level contact fields. Whitelist pattern with `!== undefined` check. `pre('save')` hook auto-syncs `bio` and `name` fields.
+- [x] **Client profile update** — `PUT /api/auth/client/profile` (`protect`, `restrictTo('client')`) — updates `clientInfo.companyName`, `companyDesc` + top-level contact fields. Same whitelist pattern.
 
 ---
 
 ## In Progress / Not Yet Built
 
-- [ ] **Profile update endpoint** — no route or controller exists for updating `freelancerInfo` fields (skills, bio, hourlyRate, experience, portfolioLinks). Users cannot edit their own profile data beyond avatar/resume.
 - [ ] **Admin routes** — `isAdmin` middleware exists in `authMiddleware.js` but no admin-specific routes or controllers are wired up.
 - [ ] **Razorpay webhook** — `razorpayWebhook` controller is implemented but needs ngrok (or a public URL) for local testing. Deferred until deployment or ngrok setup.
 - [ ] **Freelancer withdrawal** — manual admin approval flow not yet built. `withdrawFromWallet` is a fake stub. Razorpay Payouts API requires separate account approval.
@@ -323,6 +326,14 @@ Two separate user-related route files:
 ---
 
 ## CHANGELOG
+
+## 2026-07-17 — Profile update endpoints
+
+- **`PUT /api/auth/freelancer/profile`** added (`protect`, `restrictTo('freelancer')`). Allows freelancers to update `freelancerInfo.skills`, `bio`, `hourlyRate`, `experience`, `portfolioLinks`, and top-level contact fields (`firstName`, `lastName`, `address`, `city`, `zipCode`, `phoneNo`). Whitelist pattern using `!== undefined` prevents mass assignment. `pre('save')` hook auto-syncs `freelancerInfo.bio → user.bio` and rebuilds `user.name` from `firstName + lastName`.
+- **`PUT /api/auth/client/profile`** added (`protect`, `restrictTo('client')`). Allows clients to update `clientInfo.companyName`, `companyDesc`, and top-level contact fields. Same whitelist + save hook pattern.
+- Both controllers re-fetch the user after save (`.select('-password')`) and return the full updated document so the frontend can reflect changes immediately without a second call.
+
+---
 
 ## 2026-07-17 — Pre-frontend quality setup
 

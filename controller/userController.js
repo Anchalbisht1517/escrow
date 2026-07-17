@@ -781,3 +781,113 @@ export const razorpayWebhook = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Webhook received' });
   }
 };
+
+// ─── UPDATE FREELANCER PROFILE (Freelancer only) ───
+export const updateFreelancerProfile = async (req, res) => {
+  try {
+    const {
+      // top-level contact fields
+      firstName,
+      lastName,
+      address,
+      city,
+      zipCode,
+      phoneNo,
+      // freelancer-specific nested fields
+      skills,
+      bio,
+      hourlyRate,
+      experience,
+      portfolioLinks,
+    } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found', data: null });
+    }
+
+    // Whitelist — only update fields that were actually sent
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (address !== undefined) user.address = address;
+    if (city !== undefined) user.city = city;
+    if (zipCode !== undefined) user.zipCode = zipCode;
+    if (phoneNo !== undefined) user.phoneNo = phoneNo;
+
+    if (skills !== undefined) user.freelancerInfo.skills = skills;
+    if (bio !== undefined) user.freelancerInfo.bio = bio;
+    if (hourlyRate !== undefined) user.freelancerInfo.hourlyRate = hourlyRate;
+    if (experience !== undefined) user.freelancerInfo.experience = experience;
+    if (portfolioLinks !== undefined)
+      user.freelancerInfo.portfolioLinks = portfolioLinks;
+
+    // pre('save') hook will auto-sync freelancerInfo.bio → top-level bio
+    // and derive user.name from firstName + lastName
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Freelancer profile updated successfully',
+      data: { user: updatedUser },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};
+
+// ─── UPDATE CLIENT PROFILE (Client only) ───
+export const updateClientProfile = async (req, res) => {
+  try {
+    const {
+      // top-level contact fields
+      firstName,
+      lastName,
+      address,
+      city,
+      zipCode,
+      phoneNo,
+      // client-specific nested fields
+      companyName,
+      companyDesc,
+    } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found', data: null });
+    }
+
+    // Whitelist — only update fields that were actually sent
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (address !== undefined) user.address = address;
+    if (city !== undefined) user.city = city;
+    if (zipCode !== undefined) user.zipCode = zipCode;
+    if (phoneNo !== undefined) user.phoneNo = phoneNo;
+
+    if (companyName !== undefined) user.clientInfo.companyName = companyName;
+    if (companyDesc !== undefined) user.clientInfo.companyDesc = companyDesc;
+
+    // pre('save') hook will auto-derive user.name from firstName + lastName
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Client profile updated successfully',
+      data: { user: updatedUser },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};

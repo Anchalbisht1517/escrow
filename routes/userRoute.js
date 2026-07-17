@@ -11,6 +11,8 @@ import {
   deleteResume,
   refresh,
   getMe,
+  updateFreelancerProfile,
+  updateClientProfile,
 } from '../controller/userController.js';
 
 import {
@@ -43,6 +45,22 @@ router.get(
   protect,
   restrictTo('freelancer'),
   getUserProfile
+);
+
+// PUT /api/auth/freelancer/profile — update freelancer's own profile
+router.put(
+  '/freelancer/profile',
+  protect,
+  restrictTo('freelancer'),
+  updateFreelancerProfile
+);
+
+// PUT /api/auth/client/profile — update client's own profile
+router.put(
+  '/client/profile',
+  protect,
+  restrictTo('client'),
+  updateClientProfile
 );
 
 router.post(
