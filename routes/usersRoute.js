@@ -7,6 +7,8 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   razorpayWebhook,
+  submitReview,
+  getFreelancerReviews,
 } from '../controller/userController.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
@@ -47,5 +49,12 @@ router.post('/wallet/webhook', razorpayWebhook);
 
 // GET /api/users/:id/profile - get public profile by ID
 router.get('/:id/profile', getUserPublicProfile);
+
+// POST /api/users/:id/review - submit a review for a freelancer (client only)
+// Guard: must have a completed project with this freelancer
+router.post('/:id/review', protect, restrictTo('client'), submitReview);
+
+// GET /api/users/:id/reviews - get all reviews for a freelancer (public)
+router.get('/:id/reviews', getFreelancerReviews);
 
 export default router;

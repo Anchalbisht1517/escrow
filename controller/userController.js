@@ -7,6 +7,7 @@ import { sendVerificationEmail } from '../emailVerify/verifyEmail.js';
 import { generateTokens } from '../utils/generateTokens.js';
 import razorpay from '../config/razorpay.js';
 import Transaction from '../models/Transaction.js';
+import Project from '../models/Project.js';
 
 export const register = async (req, res) => {
   try {
@@ -884,6 +885,136 @@ export const updateClientProfile = async (req, res) => {
       success: true,
       message: 'Client profile updated successfully',
       data: { user: updatedUser },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};
+
+// ─── SUBMIT REVIEW (Client only — must have a completed project with this freelancer) ───
+export const submitReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+
+    // 1. Validate rating
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be a number between 1 and 5',
+        data: null,
+      });
+    }
+
+    // 2. Find the freelancer
+    const freelancer = await User.findById(req.params.id);
+    if (!freelancer) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Freelancer not found', data: null });
+    }
+
+    // 3. Confirm target user is actually a freelancer
+    if (freelancer.role !== 'freelancer') {
+      return res.status(400).json({
+        success: false,
+        message: 'You can only review freelancers',
+        data: null,
+      });
+    }
+
+    // 4. Verify the client has at least one completed project with this freelancer
+    const completedProject = await Project.findOne({
+      client: req.user._id,
+      hiredFreelancer: freelancer._id,
+      status: 'completed',
+    });
+    if (!completedProject) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only review freelancers you have worked with',
+        data: null,
+      });
+    }
+
+    // 5. Prevent duplicate reviews from the same client
+    const alreadyReviewed = freelancer.freelancerInfo.reviews.some(
+      (r) => r.fromUser.toString() === req.user._id.toString()
+    );
+    if (alreadyReviewed) {
+      return res.status(409).json({
+        success: false,
+        message: 'You have already reviewed this freelancer',
+        data: null,
+      });
+    }
+
+    // 6. Push the new review
+    freelancer.freelancerInfo.reviews.push({
+      fromUser: req.user._id,
+      rating: Number(rating),
+      comment,
+      createdAt: new Date(),
+    });
+
+    // 7. Recalculate avgRating and totalReviews
+    const reviews = freelancer.freelancerInfo.reviews;
+    freelancer.avgRating =
+      reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    freelancer.totalReviews = reviews.length;
+
+    // 8. Save — pre('save') hook syncs avgRating → freelancerInfo.rating
+    await freelancer.save();
+
+    // 9. Return updated rating stats
+    return res.status(201).json({
+      success: true,
+      message: 'Review submitted successfully',
+      data: {
+        avgRating: freelancer.avgRating,
+        totalReviews: freelancer.totalReviews,
+      },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};
+
+// ─── GET FREELANCER REVIEWS (Public) ───
+export const getFreelancerReviews = async (req, res) => {
+  try {
+    const freelancer = await User.findById(req.params.id)
+      .select('role freelancerInfo avgRating totalReviews')
+      .populate({
+        path: 'freelancerInfo.reviews.fromUser',
+        select: 'firstName lastName avatar',
+      });
+
+    if (!freelancer) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found', data: null });
+    }
+
+    if (freelancer.role !== 'freelancer') {
+      return res.status(400).json({
+        success: false,
+        message: 'This user is not a freelancer',
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reviews fetched successfully',
+      data: {
+        reviews: freelancer.freelancerInfo.reviews,
+        avgRating: freelancer.avgRating,
+        totalReviews: freelancer.totalReviews,
+      },
     });
   } catch (error) {
     return res

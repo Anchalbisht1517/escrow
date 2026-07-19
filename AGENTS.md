@@ -160,8 +160,10 @@ be clean and explainable, not just functional.
 | POST   | `/wallet/topup/order`  | `protect`, `restrictTo('client')`     | `createRazorpayOrder`   | Step 1 — creates Razorpay order, returns `orderId` + `keyId` to frontend    |
 | POST   | `/wallet/topup/verify` | `protect`, `restrictTo('client')`     | `verifyRazorpayPayment` | Step 2 — verifies HMAC signature, credits wallet, writes Transaction record |
 | POST   | `/wallet/webhook`      | — (public, no auth)                   | `razorpayWebhook`       | Razorpay calls this directly. Needs ngrok for local testing.                |
-| POST   | `/wallet/withdraw`     | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet`    | **Fake stub** — no real payout. Razorpay Payouts later.                     |
-| GET    | `/:id/profile`         | — (public, no auth)                   | `getUserPublicProfile`  | No auth required                                                            |
+| POST   | `/wallet/withdraw`     | `protect`, `restrictTo('freelancer')` | `withdrawFromWallet`    | **Fake stub** — no real payout. Razorpay Payouts later.                                       |
+| GET    | `/:id/profile`         | — (public, no auth)                   | `getUserPublicProfile`  | No auth required                                                                              |
+| POST   | `/:id/review`          | `protect`, `restrictTo('client')`     | `submitReview`          | 5 guards: rating range, freelancer exists, role check, completed project, no duplicate review |
+| GET    | `/:id/reviews`         | — (public, no auth)                   | `getFreelancerReviews`  | Returns populated reviews with reviewer name + avatar, avgRating, totalReviews               |
 
 ### Project Routes — `/api/projects` → `routes/projectRoute.js`
 
@@ -216,6 +218,7 @@ be clean and explainable, not just functional.
 - [x] **Health check endpoint** `GET /health` — returns database connection state + environment + timestamp, bypasses auth and rate limiting
 - [x] **Freelancer profile update** — `PUT /api/auth/freelancer/profile` (`protect`, `restrictTo('freelancer')`) — updates `freelancerInfo.skills`, `bio`, `hourlyRate`, `experience`, `portfolioLinks` + top-level contact fields. Whitelist pattern with `!== undefined` check. `pre('save')` hook auto-syncs `bio` and `name` fields.
 - [x] **Client profile update** — `PUT /api/auth/client/profile` (`protect`, `restrictTo('client')`) — updates `clientInfo.companyName`, `companyDesc` + top-level contact fields. Same whitelist pattern.
+- [x] **Reviews and ratings** — `POST /api/users/:id/review` (`protect`, `restrictTo('client')`) with 5 sequential guards: rating range (1–5), freelancer exists, target role check, completed project relationship required (403 if not), no duplicate reviews (409). `avgRating` and `totalReviews` recalculated and persisted on every submission. `GET /api/users/:id/reviews` (public) returns populated reviews with reviewer `firstName`, `lastName`, `avatar` + `avgRating` + `totalReviews`.
 
 ---
 
@@ -224,7 +227,6 @@ be clean and explainable, not just functional.
 - [ ] **Admin routes** — `isAdmin` middleware exists in `authMiddleware.js` but no admin-specific routes or controllers are wired up.
 - [ ] **Razorpay webhook** — `razorpayWebhook` controller is implemented but needs ngrok (or a public URL) for local testing. Deferred until deployment or ngrok setup.
 - [ ] **Freelancer withdrawal** — manual admin approval flow not yet built. `withdrawFromWallet` is a fake stub. Razorpay Payouts API requires separate account approval.
-- [ ] **Reviews and ratings** — `freelancerInfo.reviews[]` is defined in the schema but no route/controller exists to submit, list, or aggregate reviews.
 - [ ] **Milestone tracker / contract document / NDA upload** — `privateDetails` fields exist in the schema but no routes exist to upload or update these files.
 - [ ] **Frontend** — not started.
 - [ ] **`asyncHandler` utility** — `utils/asyncHandler.js` exists but is **not used anywhere** in the codebase. All controllers use bare `try/catch`. Should be adopted consistently or removed. Do not assume it is in use.
@@ -326,6 +328,15 @@ Two separate user-related route files:
 ---
 
 ## CHANGELOG
+
+## 2026-07-17 — Reviews and ratings complete
+
+- **`POST /api/users/:id/review`** added (`protect`, `restrictTo('client')`). Five sequential guards checked before any DB write: (1) rating must be 1–5, (2) freelancer must exist, (3) target user must have `role === 'freelancer'`, (4) client must have at least one `completed` project with this freelancer (403 if not), (5) client must not have already reviewed (409 duplicate check). `avgRating` recalculated fresh from all reviews on every submission; `totalReviews` incremented in the same operation. Both fields persisted directly on the User document.
+- **`GET /api/users/:id/reviews`** added (public, no auth). Returns `freelancerInfo.reviews[]` populated with reviewer `firstName`, `lastName`, `avatar` via Mongoose `.populate()`. Includes `avgRating` and `totalReviews` in response.
+- **`Project` model** imported into `userController.js` (needed for completed-project relationship check).
+- Core marketplace loop now complete: **hire → work → pay → review**.
+
+---
 
 ## 2026-07-17 — Profile update endpoints
 
