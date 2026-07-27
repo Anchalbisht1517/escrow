@@ -61,7 +61,8 @@ be clean and explainable, not just functional.
 | `name`                                  | String                                | Auto-derived from first+last via `pre('save')` hook                                                                                                                                                                                        |
 | `email`                                 | String                                | Unique, lowercase, trimmed. Required.                                                                                                                                                                                                      |
 | `password`                              | String                                | Bcrypt-hashed (salt=10) via `pre('save')` hook. Only re-hashes when modified.                                                                                                                                                              |
-| `role`                                  | `'client' \| 'freelancer' \| 'admin'` | Required, indexed                                                                                                                                                                                                                          |
+| `role`                                  | `'client' \| 'freelancer' \| 'admin'` | Required, indexed                                                                                                                 
+                                                                                                         |
 | `walletBalance`                         | Number                                | Default 0                                                                                                                                                                                                                                  |
 | `isActive`                              | Boolean                               | Default `true`. Inactive users blocked at `protect` middleware.                                                                                                                                                                            |
 | `isVerified`                            | Boolean                               | Default `false`. Must be `true` to log in. Set by email verification flow.                                                                                                                                                                 |
@@ -219,6 +220,10 @@ be clean and explainable, not just functional.
 - [x] **Freelancer profile update** — `PUT /api/auth/freelancer/profile` (`protect`, `restrictTo('freelancer')`) — updates `freelancerInfo.skills`, `bio`, `hourlyRate`, `experience`, `portfolioLinks` + top-level contact fields. Whitelist pattern with `!== undefined` check. `pre('save')` hook auto-syncs `bio` and `name` fields.
 - [x] **Client profile update** — `PUT /api/auth/client/profile` (`protect`, `restrictTo('client')`) — updates `clientInfo.companyName`, `companyDesc` + top-level contact fields. Same whitelist pattern.
 - [x] **Reviews and ratings** — `POST /api/users/:id/review` (`protect`, `restrictTo('client')`) with 5 sequential guards: rating range (1–5), freelancer exists, target role check, completed project relationship required (403 if not), no duplicate reviews (409). `avgRating` and `totalReviews` recalculated and persisted on every submission. `GET /api/users/:id/reviews` (public) returns populated reviews with reviewer `firstName`, `lastName`, `avatar` + `avgRating` + `totalReviews`.
+- [x] **React Frontend Core**: Vite + React, TailwindCSS, React Router v6, Axios with credentials, `AuthContext` (session check & auth state), and `ProtectedRoute` (RBAC role-based route guard).
+- [x] **Auth UI**: Register Page, Login Page with automatic role-based dashboard redirection.
+- [x] **Client UI**: Client Dashboard (wallet balance, stats, project list linking to details), Post Project Page (budget/skills/deadline form), Client Project Detail Page (manage bids with Accept/Reject, mark complete to release escrow, cancel project to refund escrow).
+- [x] **Freelancer UI**: Freelancer Dashboard (wallet balance, completed projects count, rating, available projects preview), Project Detail & Bid Submission Page (`/projects/:id` with bid amount, delivery days, and cover letter form).
 
 ---
 
@@ -228,7 +233,7 @@ be clean and explainable, not just functional.
 - [ ] **Razorpay webhook** — `razorpayWebhook` controller is implemented but needs ngrok (or a public URL) for local testing. Deferred until deployment or ngrok setup.
 - [ ] **Freelancer withdrawal** — manual admin approval flow not yet built. `withdrawFromWallet` is a fake stub. Razorpay Payouts API requires separate account approval.
 - [ ] **Milestone tracker / contract document / NDA upload** — `privateDetails` fields exist in the schema but no routes exist to upload or update these files.
-- [ ] **Frontend** — not started.
+- [ ] **Frontend (Remaining pages)** — Core flows (Auth, Client & Freelancer Dashboards, Post Project, Project Details & Bidding) are built. Still needed: `/browse-projects` (full search & filter page), `/wallet` (top-up UI with Razorpay integration), Profile management pages, Review submission modal/form.
 - [ ] **`asyncHandler` utility** — `utils/asyncHandler.js` exists but is **not used anywhere** in the codebase. All controllers use bare `try/catch`. Should be adopted consistently or removed. Do not assume it is in use.
 - [ ] **Transaction history pagination** — `User.transactionHistory` is an unbounded embedded array with no pagination. Will eventually hit MongoDB's 16MB document size limit.
 
@@ -374,6 +379,16 @@ Two separate user-related route files:
 - **`hireFreelancer` removed** (commit `f7007c4`): `PATCH /:id/hire` route and its controller deleted. `acceptBid` is now the sole path for hiring a freelancer + locking escrow. Route table updated.
 - **`companyName` populate bug fixed** (commit `4b985d9`): `getPublicProject` and `listProjects` now populate `clientInfo` (not `companyName` directly). Noted in Important Context #2.
 - **Duplicate User field sync added** (commit `9db9f1b`): `pre('save')` hook added to `User.js` keeping `bio` ↔ `freelancerInfo.bio` and `avgRating` ↔ `freelancerInfo.rating` in sync, with top-level fields winning on conflict. Data Models table updated to reflect canonical source.
+- **Reputation system added**: `completedProjectsCount` and `abandonedProjectsCount` fields added to `User` model. `completeProject` increments completed count; `cancelProject` increments abandoned count only when `escrowStatus === 'locked'` (i.e. a freelancer was actively hired). Open-project cancellations do not penalise the freelancer. Security deposit Pending Decision closed.
+
+---
+
+## 2026-06-30 — AGENTS.md created — Initial persistent memory document
+
+Full codebase scan performed across all models, routes, controllers, middleware, utils, and config files.
+Document captures the current state of the project as of this date, including known issues (latent `companyName` populate bug, `asyncHandler` unused, `hireFreelancer` vs `acceptBid` inconsistency), pending decisions (AI features, security deposit), and all architecture rules.
+Previous AGENTS.md existed with corrupted/garbled lines and inaccuracies — replaced entirely with this scan-based version.
+ting` in sync, with top-level fields winning on conflict. Data Models table updated to reflect canonical source.
 - **Reputation system added**: `completedProjectsCount` and `abandonedProjectsCount` fields added to `User` model. `completeProject` increments completed count; `cancelProject` increments abandoned count only when `escrowStatus === 'locked'` (i.e. a freelancer was actively hired). Open-project cancellations do not penalise the freelancer. Security deposit Pending Decision closed.
 
 ---
