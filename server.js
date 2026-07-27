@@ -32,27 +32,26 @@ app.use(helmet());
 // CORS - lock to your frontend origin in production
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : true,
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.FRONTEND_URL
+      : 'http://localhost:5173',
     credentials: true,
   })
 );
-
 // Rate limiting - global
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // relaxed for dev
   message: {
     success: false,
     message: 'Too many requests, please try again later.',
   },
-});
-app.use(globalLimiter);
+})
 
 // Rate limiting - stricter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000, // Increased for dev testing ease
+  max: 100000, // Increased for dev testing ease
   message: {
     success: false,
     message: 'Too many auth attempts, please try again later.',

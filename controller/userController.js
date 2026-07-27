@@ -95,6 +95,7 @@ export const login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -383,7 +384,7 @@ export const getMe = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Current user data retrieved successfully',
-      data: { user: req.user },
+      data: req.user,
     });
   } catch (error) {
     return res.status(500).json({

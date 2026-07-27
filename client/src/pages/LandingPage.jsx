@@ -16,6 +16,7 @@ function LandingPage() {
             <HowItWorks />
             <Categories />
             <FeaturedFreelancers />
+
             <CTASection />
             <Footer />
         </div>
