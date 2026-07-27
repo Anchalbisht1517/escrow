@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import ClientDashboard from './pages/ClientDashboard'
+import PostProjectPage from './pages/PostProjectPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function FreelancerDashboard() {
@@ -25,6 +26,14 @@ function App() {
           element={
             <ProtectedRoute allowedRole="client">
               <ClientDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post-project"
+          element={
+            <ProtectedRoute allowedRole="client">
+              <PostProjectPage />
             </ProtectedRoute>
           }
         />
