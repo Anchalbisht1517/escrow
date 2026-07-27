@@ -3,16 +3,9 @@ import LandingPage from './pages/LandingPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import ClientDashboard from './pages/ClientDashboard'
+import FreelancerDashboard from './pages/FreelancerDashboard'
 import PostProjectPage from './pages/PostProjectPage'
 import ProtectedRoute from './components/ProtectedRoute'
-
-function FreelancerDashboard() {
-  return (
-    <div className="p-10 text-2xl font-bold text-indigo-600">
-      Freelancer Dashboard — Coming Soon
-    </div>
-  )
-}
 
 function App() {
   return (
