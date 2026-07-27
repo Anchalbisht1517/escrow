@@ -2,15 +2,15 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
+import ClientDashboard from './pages/ClientDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 
-// Placeholder dashboard components for now
-function ClientDashboard() {
-  return <div className="p-10 text-2xl font-bold text-indigo-600">Client Dashboard — Coming Soon</div>
-}
-
 function FreelancerDashboard() {
-  return <div className="p-10 text-2xl font-bold text-indigo-600">Freelancer Dashboard — Coming Soon</div>
+  return (
+    <div className="p-10 text-2xl font-bold text-indigo-600">
+      Freelancer Dashboard — Coming Soon
+    </div>
+  )
 }
 
 function App() {
