@@ -110,9 +110,10 @@ function ClientDashboard() {
                     ) : (
                         <div className="space-y-4">
                             {projects.map((project) => (
-                                <div
+                                <a
                                     key={project._id}
-                                    className="border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow"
+                                    href={`/client/projects/${project._id}`}
+                                    className="block border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow"
                                 >
                                     <div className="flex justify-between items-start">
                                         <div>
@@ -124,17 +125,17 @@ function ClientDashboard() {
                                             </p>
                                         </div>
                                         <span className={`text-xs px-3 py-1 rounded-full font-medium ${project.status === 'open'
-                                                ? 'bg-emerald-100 text-emerald-700'
-                                                : project.status === 'in-progress'
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : project.status === 'completed'
-                                                        ? 'bg-gray-100 text-gray-600'
-                                                        : 'bg-red-100 text-red-600'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : project.status === 'in-progress'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : project.status === 'completed'
+                                                    ? 'bg-gray-100 text-gray-600'
+                                                    : 'bg-red-100 text-red-600'
                                             }`}>
                                             {project.status}
                                         </span>
                                     </div>
-                                </div>
+                                </a>
                             ))}
                         </div>
                     )}

@@ -6,6 +6,7 @@ import ClientDashboard from './pages/ClientDashboard'
 import FreelancerDashboard from './pages/FreelancerDashboard'
 import PostProjectPage from './pages/PostProjectPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
+import ClientProjectDetailPage from './pages/ClientProjectDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -44,6 +45,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/client/projects/:id"
+          element={
+            <ProtectedRoute allowedRole="client">
+              <ClientProjectDetailPage />
             </ProtectedRoute>
           }
         />
