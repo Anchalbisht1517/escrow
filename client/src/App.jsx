@@ -11,6 +11,7 @@ import WalletPage from './pages/WalletPage'
 import NotFoundPage from './pages/NotFoundPage'
 import BrowseProjectsPage from './pages/BrowseProjectsPage'
 import EditProfilePage from './pages/EditProfilePage'
+import FreelancerProfilePage from './pages/FreelancerProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -85,6 +86,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Public — no auth needed, matches backend route */}
+        <Route path="/freelancers/:id" element={<FreelancerProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

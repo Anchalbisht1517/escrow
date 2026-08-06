@@ -156,6 +156,17 @@ function ProjectDetailPage() {
                                         {project.totalBids}
                                     </p>
                                 </div>
+                                {project.client && (
+                                    <div>
+                                        <p className="text-gray-400">Posted by</p>
+                                        <a
+                                            href={`/freelancers/${project.client._id}`}
+                                            className="font-semibold text-indigo-600 hover:underline"
+                                        >
+                                            {project.client.firstName} {project.client.lastName}
+                                        </a>
+                                    </div>
+                                )}
                                 {project.deadline && (
                                     <div>
                                         <p className="text-gray-400">Deadline</p>

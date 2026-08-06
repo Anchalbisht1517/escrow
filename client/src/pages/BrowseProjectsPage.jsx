@@ -377,7 +377,12 @@ function ProjectCard({ project, userRole }) {
                         {project.client && (
                             <>
                                 <span>·</span>
-                                <span>by {project.client.firstName} {project.client.lastName}</span>
+                                <a
+                                    href={`/freelancers/${project.client._id}`}
+                                    className="hover:text-indigo-600 hover:underline transition-colors"
+                                >
+                                    by {project.client.firstName} {project.client.lastName}
+                                </a>
                             </>
                         )}
                     </div>
