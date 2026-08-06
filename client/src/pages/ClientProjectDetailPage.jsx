@@ -44,8 +44,8 @@ function ClientProjectDetailPage() {
         setMessage('')
         try {
             await axios.patch(
-                `http://localhost:5000/api/bids/${bidId}/accept`,
-                {},
+                `http://localhost:5000/api/bids/${projectId}/accept`,
+                { bidId },
                 { withCredentials: true }
             )
             setMessage('Bid accepted! Escrow locked successfully.')
