@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
@@ -38,13 +38,21 @@ function FreelancerDashboard() {
             <div className="max-w-6xl mx-auto px-6 py-10">
 
                 {/* Welcome header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Welcome back, {user?.firstName} 👋
-                    </h1>
-                    <p className="text-gray-500 mt-1">
-                        Find projects and grow your freelance career
-                    </p>
+                <div className="mb-8 flex items-start justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Welcome back, {user?.firstName} 👋
+                        </h1>
+                        <p className="text-gray-500 mt-1">
+                            Find projects and grow your freelance career
+                        </p>
+                    </div>
+                    <a
+                        href="/profile/edit"
+                        className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+                    >
+                        ✏️ Edit Profile
+                    </a>
                 </div>
 
                 {/* Stats row */}

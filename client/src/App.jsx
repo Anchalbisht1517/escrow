@@ -10,6 +10,7 @@ import ClientProjectDetailPage from './pages/ClientProjectDetailPage'
 import WalletPage from './pages/WalletPage'
 import NotFoundPage from './pages/NotFoundPage'
 import BrowseProjectsPage from './pages/BrowseProjectsPage'
+import EditProfilePage from './pages/EditProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -73,6 +74,14 @@ function App() {
           element={
             <ProtectedRoute>
               <BrowseProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <ProtectedRoute>
+              <EditProfilePage />
             </ProtectedRoute>
           }
         />

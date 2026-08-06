@@ -48,8 +48,22 @@ export function AuthProvider({ children }) {
         setUser(null)
     }
 
+    // Re-fetch the current user from /api/auth/me and update context.
+    // Called after profile updates so Navbar and other consumers reflect new data.
+    const refreshUser = async () => {
+        try {
+            const response = await axios.get(
+                'http://localhost:5000/api/auth/me',
+                { withCredentials: true }
+            )
+            setUser(response.data.data)
+        } catch {
+            // If the refresh fails, leave existing user state intact
+        }
+    }
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     )

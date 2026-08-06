@@ -35,9 +35,11 @@ function Navbar() {
                             <p className="text-sm font-semibold text-gray-800">{user.firstName}</p>
                             <p className="text-xs text-indigo-600 capitalize">{user.role}</p>
                         </div>
-                        <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {user.firstName?.[0]}{user.lastName?.[0]}
-                        </div>
+                        <a href="/profile/edit">
+                            <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-indigo-400 hover:ring-offset-1 transition-all cursor-pointer" title="Edit Profile">
+                                {user.firstName?.[0]}{user.lastName?.[0]}
+                            </div>
+                        </a>
                         <button
                             onClick={handleLogout}
                             className="px-4 py-2 text-sm text-red-500 border border-red-200 rounded-lg hover:bg-red-50"
