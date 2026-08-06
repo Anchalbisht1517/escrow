@@ -27,12 +27,18 @@ function Hero() {
 
                     {/* CTA Buttons */}
                     <div className="flex gap-4 mb-8">
-                        <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+                        <a
+                            href="/post-project"
+                            className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
+                        >
                             Post a Project →
-                        </button>
-                        <button className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50">
+                        </a>
+                        <a
+                            href="/register"
+                            className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50"
+                        >
                             Find Work as Freelancer
-                        </button>
+                        </a>
                     </div>
 
                     {/* Trust indicators */}

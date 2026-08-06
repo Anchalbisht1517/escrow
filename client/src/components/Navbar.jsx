@@ -18,9 +18,9 @@ function Navbar() {
 
             {/* Nav Links */}
             <div className="flex gap-6 text-gray-600 font-medium">
-                <a href="#" className="hover:text-indigo-600">Find Work</a>
-                <a href="#" className="hover:text-indigo-600">Find Talent</a>
-                <a href="#" className="hover:text-indigo-600">How It Works</a>
+                <a href="/browse-projects" className="hover:text-indigo-600">Find Work</a>
+                <a href="/browse-projects" className="hover:text-indigo-600">Find Talent</a>
+                <a href="#how-it-works" className="hover:text-indigo-600">How It Works</a>
             </div>
 
             {/* Auth section */}

@@ -9,6 +9,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage'
 import ClientProjectDetailPage from './pages/ClientProjectDetailPage'
 import WalletPage from './pages/WalletPage'
 import NotFoundPage from './pages/NotFoundPage'
+import BrowseProjectsPage from './pages/BrowseProjectsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -64,6 +65,14 @@ function App() {
           element={
             <ProtectedRoute>
               <WalletPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/browse-projects"
+          element={
+            <ProtectedRoute>
+              <BrowseProjectsPage />
             </ProtectedRoute>
           }
         />

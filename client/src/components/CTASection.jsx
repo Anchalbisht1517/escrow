@@ -9,12 +9,18 @@ function CTASection() {
                     Join hundreds of clients and freelancers already using Allie
                 </p>
                 <div className="flex gap-4 justify-center">
-                    <button className="px-8 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50">
+                    <a
+                        href="/post-project"
+                        className="px-8 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50"
+                    >
                         Post a Project
-                    </button>
-                    <button className="px-8 py-3 border border-white text-white rounded-lg font-semibold hover:bg-indigo-700">
+                    </a>
+                    <a
+                        href="/register"
+                        className="px-8 py-3 border border-white text-white rounded-lg font-semibold hover:bg-indigo-700"
+                    >
                         Find Work
-                    </button>
+                    </a>
                 </div>
                 <p className="text-indigo-300 text-sm mt-6">
                     Free to join. No monthly fees.
