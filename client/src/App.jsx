@@ -7,6 +7,8 @@ import FreelancerDashboard from './pages/FreelancerDashboard'
 import PostProjectPage from './pages/PostProjectPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
 import ClientProjectDetailPage from './pages/ClientProjectDetailPage'
+import WalletPage from './pages/WalletPage'
+import NotFoundPage from './pages/NotFoundPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -56,6 +58,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/wallet"
+          element={
+            <ProtectedRoute>
+              <WalletPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   )
