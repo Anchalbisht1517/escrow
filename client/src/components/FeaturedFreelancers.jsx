@@ -104,9 +104,12 @@ function FeaturedFreelancers() {
               </div>
 
               {/* Button */}
-              <button className="w-full py-2 border border-indigo-600 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors">
-                View Profile
-              </button>
+              <a
+                href="/browse-projects"
+                className="block w-full py-2 border border-indigo-600 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors text-center"
+              >
+                Browse Projects
+              </a>
             </div>
           ))}
         </div>

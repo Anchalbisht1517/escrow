@@ -31,6 +31,22 @@ function Navbar() {
                 ) : user ? (
                     // Logged in — show user info and logout
                     <div className="flex items-center gap-4">
+                        {/* Quick nav links for logged-in user */}
+                        <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
+                            <a
+                                href={user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard'}
+                                className="hover:text-indigo-600 transition-colors"
+                            >
+                                Dashboard
+                            </a>
+                            <a
+                                href="/wallet"
+                                className="hover:text-indigo-600 transition-colors"
+                            >
+                                💰 Wallet
+                            </a>
+                        </div>
+
                         <div className="text-right">
                             <p className="text-sm font-semibold text-gray-800">{user.firstName}</p>
                             <p className="text-xs text-indigo-600 capitalize">{user.role}</p>

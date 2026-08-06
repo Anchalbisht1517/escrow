@@ -8,8 +8,8 @@ function Footer() {
 
                     {/* Logo and tagline */}
                     <div className="col-span-2 md:col-span-1">
-                        <h2 className="text-white text-2xl font-bold mb-2">Allie</h2>
-                        <p className="text-sm leading-relaxed">
+                        <a href="/" className="text-white text-2xl font-bold mb-2 inline-block">Allie</a>
+                        <p className="text-sm leading-relaxed mt-1">
                             Hire trusted freelancers with secure escrow payments.
                         </p>
                     </div>
@@ -29,9 +29,9 @@ function Footer() {
                     <div>
                         <h4 className="text-white font-semibold mb-4">For Clients</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><a href="#" className="hover:text-white">How to hire</a></li>
-                            <li><a href="#" className="hover:text-white">Post a project</a></li>
-                            <li><a href="#" className="hover:text-white">Enterprise</a></li>
+                            <li><a href="/browse-projects" className="hover:text-white">How to hire</a></li>
+                            <li><a href="/post-project" className="hover:text-white">Post a project</a></li>
+                            <li><a href="/register" className="hover:text-white">Get started</a></li>
                         </ul>
                     </div>
 
@@ -39,9 +39,9 @@ function Footer() {
                     <div>
                         <h4 className="text-white font-semibold mb-4">For Freelancers</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><a href="#" className="hover:text-white">Find work</a></li>
-                            <li><a href="#" className="hover:text-white">Create profile</a></li>
-                            <li><a href="#" className="hover:text-white">Resources</a></li>
+                            <li><a href="/browse-projects" className="hover:text-white">Find work</a></li>
+                            <li><a href="/register" className="hover:text-white">Create profile</a></li>
+                            <li><a href="/profile/edit" className="hover:text-white">Edit profile</a></li>
                         </ul>
                     </div>
 
@@ -73,4 +73,4 @@ function Footer() {
     )
 }
 
-export default Footer
+export default Footer
