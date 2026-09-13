@@ -1,34 +1,30 @@
-# dependencies
+# Dependencies
 node_modules/
+**/node_modules/
 
-# uploads
-uploads/
-
-# env files
+# Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+**/.env
+.env.*
 
-# build folders
+# Build folders
 dist/
 build/
+**/dist/
+**/build/
 
-# logs
-logs
+# Uploads
+**/uploads/
+
+# Logs
 *.log
-npm-debug.log*
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# editor
+# Editor
 .vscode/
 
-# optional
+# Coverage
 coverage/
-
-# dev-only scripts that use secrets directly — never commit
-scripts/generateTestSignature.js
