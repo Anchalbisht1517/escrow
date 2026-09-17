@@ -1,36 +1,12 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 
-// Ensure upload directories exist
-const avatarDir = 'uploads/avatars';
-const resumeDir = 'uploads/resumes';
+// Use memoryStorage instead of diskStorage.
+// Files are held in req.file.buffer (RAM) temporarily,
+// then we stream them to Cloudinary in the controller.
+// Nothing is ever written to the local filesystem.
+const memoryStorage = multer.memoryStorage();
 
-[avatarDir, resumeDir].forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
-
-// Storage for avatars
-const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, avatarDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-// Storage for resumes
-const resumeStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, resumeDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-// File filters
+// File filter — only allow image formats for avatars
 const avatarFileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (allowedTypes.includes(file.mimetype)) {
@@ -40,6 +16,7 @@ const avatarFileFilter = (req, file, cb) => {
   }
 };
 
+// File filter — only allow PDF for resumes
 const resumeFileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
@@ -48,15 +25,16 @@ const resumeFileFilter = (req, file, cb) => {
   }
 };
 
-// Upload instances
+// Avatar upload middleware — 2MB max, images only, stored in memory
 export const uploadAvatar = multer({
-  storage: avatarStorage,
+  storage: memoryStorage,
   fileFilter: avatarFileFilter,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
 });
 
+// Resume upload middleware — 5MB max, PDFs only, stored in memory
 export const uploadResumeLocal = multer({
-  storage: resumeStorage,
+  storage: memoryStorage,
   fileFilter: resumeFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });

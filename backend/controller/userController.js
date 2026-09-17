@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import fs from 'fs';
+import cloudinary from '../config/cloudinary.js'; // Cloudinary SDK for file uploads
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../emailVerify/verifyEmail.js';
 import { generateTokens } from '../utils/generateTokens.js';
@@ -165,7 +165,6 @@ export const uploadAvatar = async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -174,17 +173,32 @@ export const uploadAvatar = async (req, res) => {
       });
     }
 
-    // Delete old avatar if it exists
-    if (user.avatar) {
-      const oldPath = user.avatar.replace('/uploads/', 'uploads/');
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
+    // Delete old avatar from Cloudinary if one exists
+    if (user.avatarPublicId) {
+      await cloudinary.uploader.destroy(user.avatarPublicId);
     }
 
-    // Save new avatar path
-    user.avatar = `/uploads/avatars/${req.file.filename}`;
-    user.avatarPublicId = req.file.filename; // keep for reference
+    // Upload the new avatar buffer to Cloudinary
+    // We wrap the stream-based API in a Promise so we can await it
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'escrow/avatars',   // organises files in Cloudinary dashboard
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      // Pipe the file buffer (held in memory by multer) into the stream
+      stream.end(req.file.buffer);
+    });
+
+    // Save the Cloudinary URL and public_id to the database
+    // public_id is needed later to delete the file from Cloudinary
+    user.avatar = uploadResult.secure_url;
+    user.avatarPublicId = uploadResult.public_id;
     await user.save();
 
     return res.status(200).json({
@@ -204,7 +218,6 @@ export const uploadAvatar = async (req, res) => {
 export const deleteAvatar = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -213,13 +226,12 @@ export const deleteAvatar = async (req, res) => {
       });
     }
 
-    if (user.avatar) {
-      const filePath = user.avatar.replace('/uploads/', 'uploads/');
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+    // Delete the image from Cloudinary using its public_id
+    if (user.avatarPublicId) {
+      await cloudinary.uploader.destroy(user.avatarPublicId);
     }
 
+    // Clear avatar fields in the database
     user.avatar = '';
     user.avatarPublicId = '';
     await user.save();
@@ -249,7 +261,6 @@ export const uploadResume = async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -258,22 +269,33 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    // Delete old resume if exists
-    if (user.freelancerInfo?.resume?.url) {
-      const oldPath = user.freelancerInfo.resume.url.replace(
-        '/uploads/',
-        'uploads/'
-      );
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
+    // Delete old resume from Cloudinary if one exists
+    if (user.freelancerInfo?.resume?.public_id) {
+      await cloudinary.uploader.destroy(user.freelancerInfo.resume.public_id, {
+        resource_type: 'raw', // PDFs are 'raw' type in Cloudinary, not 'image'
+      });
     }
 
-    user.freelancerInfo.resume = {
-      public_id: req.file.filename,
-      url: `/uploads/resumes/${req.file.filename}`,
-    };
+    // Upload the new resume buffer to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'escrow/resumes',
+          resource_type: 'raw', // PDFs must use 'raw' resource type
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
 
+    // Save Cloudinary URL and public_id to the database
+    user.freelancerInfo.resume = {
+      public_id: uploadResult.public_id, // used to delete later
+      url: uploadResult.secure_url,      // HTTPS URL served from Cloudinary CDN
+    };
     await user.save();
 
     return res.status(200).json({
@@ -292,7 +314,6 @@ export const uploadResume = async (req, res) => {
 export const deleteResume = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -301,21 +322,18 @@ export const deleteResume = async (req, res) => {
       });
     }
 
-    if (user.freelancerInfo?.resume?.url) {
-      const filePath = user.freelancerInfo.resume.url.replace(
-        '/uploads/',
-        'uploads/'
-      );
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+    // Delete the PDF from Cloudinary using its public_id
+    if (user.freelancerInfo?.resume?.public_id) {
+      await cloudinary.uploader.destroy(user.freelancerInfo.resume.public_id, {
+        resource_type: 'raw', // PDFs are 'raw' type in Cloudinary
+      });
     }
 
+    // Clear resume fields in the database
     user.freelancerInfo.resume = {
       public_id: '',
       url: '',
     };
-
     await user.save();
 
     return res.status(200).json({

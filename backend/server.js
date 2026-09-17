@@ -24,7 +24,8 @@ const app = express();
 app.use('/api/users/wallet/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static('uploads'));
+// NOTE: No static /uploads middleware needed — files are stored on Cloudinary, not local disk
+
 
 // Security headers
 app.use(helmet());
