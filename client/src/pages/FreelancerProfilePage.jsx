@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function FreelancerProfilePage() {
@@ -17,8 +17,8 @@ function FreelancerProfilePage() {
         const fetchAll = async () => {
             try {
                 const [profileRes, reviewsRes] = await Promise.all([
-                    axios.get(`http://localhost:5000/api/users/${id}/profile`),
-                    axios.get(`http://localhost:5000/api/users/${id}/reviews`),
+                    API.get(`/api/users/${id}/profile`),
+                    API.get(`/api/users/${id}/reviews`),
                 ])
                 setProfile(profileRes.data.data)
                 setReviews(reviewsRes.data.data.reviews ?? [])

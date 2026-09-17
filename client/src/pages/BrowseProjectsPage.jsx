@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function BrowseProjectsPage() {
@@ -23,10 +23,7 @@ function BrowseProjectsPage() {
             params.append('page', page)
             params.append('limit', 10)
 
-            const res = await axios.get(
-                `http://localhost:5000/api/projects?${params.toString()}`,
-                { withCredentials: true }
-            )
+            const res = await API.get(`/api/projects?${params.toString()}`)
             setProjects(res.data.data.projects)
             setTotalPages(res.data.data.totalPages || 1)
         } catch (err) {

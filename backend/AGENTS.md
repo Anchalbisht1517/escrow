@@ -18,7 +18,7 @@ be clean and explainable, not just functional.
 - **File Uploads**: Multer (local disk storage to `uploads/avatars/` and `uploads/resumes/`)
 - **Email**: Nodemailer (email verification + password reset)
 - **Security**: `helmet`, `cors`, `express-rate-limit`, `mongo-sanitize` (custom middleware workaround — see note below)
-- **Frontend**: Not yet built. React assumed when the time comes.
+- **Frontend**: React + Vite + Tailwind CSS v4, React Router v7, Axios (`withCredentials: true` on every request)
 - **Payment**: Razorpay — wallet top-up via Payment Gateway integrated (order creation + HMAC signature verification). Freelancer withdrawal is a manual stub pending Razorpay Payouts approval.
 - **AI (future)**: Under consideration — see "Pending Decisions" section. Do NOT build until confirmed.
 
@@ -191,6 +191,38 @@ be clean and explainable, not just functional.
 
 ---
 
+## Frontend Pages — `client/src/pages/`
+
+| Page | Route | Who can access |
+| ---- | ----- | -------------- |
+| `LandingPage` | `/` | Public |
+| `RegisterPage` | `/register` | Public |
+| `LoginPage` | `/login` | Public |
+| `ForgotPasswordPage` | `/forgot-password` | Public |
+| `ClientDashboard` | `/client/dashboard` | Client only |
+| `PostProjectPage` | `/post-project` | Client only |
+| `ClientProjectDetailPage` | `/client/projects/:id` | Client only |
+| `FreelancerDashboard` | `/freelancer/dashboard` | Freelancer only |
+| `ProjectDetailPage` | `/projects/:id` | Any logged-in user |
+| `BrowseProjectsPage` | `/browse-projects` | Any logged-in user |
+| `WalletPage` | `/wallet` | Any logged-in user |
+| `EditProfilePage` | `/profile/edit` | Any logged-in user |
+| `FreelancerProfilePage` | `/freelancers/:id` | Public |
+| `NotFoundPage` | `*` | Public |
+
+## Frontend Architecture
+
+- **Framework**: React + Vite (not Create React App)
+- **Styling**: Tailwind CSS v4 via `@tailwindcss/vite` plugin
+- **Routing**: React Router v7
+- **API calls**: Axios with `withCredentials: true` on every request
+- **Auth state**: `AuthContext` (`context/AuthContext.jsx`) wraps entire app in `main.jsx` via `AuthProvider`
+- **AuthContext exposes**: `user`, `loading`, `login`, `logout`, `refreshUser`
+- **Protected routes**: `ProtectedRoute` component checks auth + role before rendering any page
+- **Base API URL**: `http://localhost:5000` (hardcoded — needs env variable before production)
+
+---
+
 ## Completed Features
 
 - [x] **User registration** with email verification (Nodemailer, JWT-signed verification token)
@@ -224,6 +256,16 @@ be clean and explainable, not just functional.
 - [x] **Auth UI**: Register Page, Login Page with automatic role-based dashboard redirection.
 - [x] **Client UI**: Client Dashboard (wallet balance, stats, project list linking to details), Post Project Page (budget/skills/deadline form), Client Project Detail Page (manage bids with Accept/Reject, mark complete to release escrow, cancel project to refund escrow).
 - [x] **Freelancer UI**: Freelancer Dashboard (wallet balance, completed projects count, rating, available projects preview), Project Detail & Bid Submission Page (`/projects/:id` with bid amount, delivery days, and cover letter form).
+- [x] **Full React frontend with 14 pages** — all routes wired, navigation connected end-to-end
+- [x] **Auth Context with persistent login state** — calls `/api/auth/me` on app load to restore session
+- [x] **Protected routes with role-based access** — `ProtectedRoute` enforces client/freelancer role guards
+- [x] **Landing page with all 8 sections** — hero, features, how-it-works, stats, testimonials, CTA, etc.
+- [x] **Complete client flow**: register → login → post project → view bids → accept → complete → wallet
+- [x] **Complete freelancer flow**: register → login → browse projects → view project → place bid → wallet
+- [x] **Wallet page** — balance display, top-up form, full transaction history
+- [x] **Browse projects** — search bar + skill/budget filters, paginated results
+- [x] **Public freelancer profile** — reviews list, star ratings, skills, bio, stats
+- [x] **Profile edit** — separate forms for client (company info) and freelancer (skills, bio, hourly rate, portfolio links) roles
 
 ---
 
@@ -233,7 +275,9 @@ be clean and explainable, not just functional.
 - [ ] **Razorpay webhook** — `razorpayWebhook` controller is implemented but needs ngrok (or a public URL) for local testing. Deferred until deployment or ngrok setup.
 - [ ] **Freelancer withdrawal** — manual admin approval flow not yet built. `withdrawFromWallet` is a fake stub. Razorpay Payouts API requires separate account approval.
 - [ ] **Milestone tracker / contract document / NDA upload** — `privateDetails` fields exist in the schema but no routes exist to upload or update these files.
-- [ ] **Frontend (Remaining pages)** — Core flows (Auth, Client & Freelancer Dashboards, Post Project, Project Details & Bidding) are built. Still needed: `/browse-projects` (full search & filter page), `/wallet` (top-up UI with Razorpay integration), Profile management pages, Review submission modal/form.
+- [ ] **API base URL hardcoded** — `http://localhost:5000` is hardcoded in every component; needs to move to an environment variable (`VITE_API_URL`) before deployment
+- [ ] **No loading skeletons** — most pages show a blank gap while data loads; skeleton screens not yet implemented
+- [ ] **Navbar not mobile-tested** — hamburger menu not implemented; layout may break on small viewports
 - [ ] **`asyncHandler` utility** — `utils/asyncHandler.js` exists but is **not used anywhere** in the codebase. All controllers use bare `try/catch`. Should be adopted consistently or removed. Do not assume it is in use.
 - [ ] **Transaction history pagination** — `User.transactionHistory` is an unbounded embedded array with no pagination. Will eventually hit MongoDB's 16MB document size limit.
 
@@ -333,6 +377,22 @@ Two separate user-related route files:
 ---
 
 ## CHANGELOG
+
+## 2026-08-10 — Frontend MVP complete
+
+Built complete React frontend with 14 pages covering full client and freelancer flows.
+
+- **React + Vite + Tailwind CSS v4** project scaffolded inside `client/`
+- **`AuthContext`** wraps the entire app; calls `/api/auth/me` on load to restore persistent login state. Exposes `user`, `loading`, `login`, `logout`, `refreshUser`.
+- **`ProtectedRoute`** enforces auth + RBAC role checks before rendering any protected page.
+- **14 pages shipped**: `LandingPage`, `RegisterPage`, `LoginPage`, `ForgotPasswordPage`, `ClientDashboard`, `PostProjectPage`, `ClientProjectDetailPage`, `FreelancerDashboard`, `ProjectDetailPage`, `BrowseProjectsPage`, `WalletPage`, `EditProfilePage`, `FreelancerProfilePage`, `NotFoundPage`.
+- **Landing page** — 8-section marketing page (hero, features, how-it-works, stats, testimonials, CTA, etc.)
+- **Browse projects** — search + skill/budget filter UI wired to `GET /api/projects`.
+- **Public freelancer profiles** — reviews, star ratings, stats.
+- **Profile edit** — separate form paths for client (company info) and freelancer (skills, bio, hourly rate, portfolio links).
+- **Known issues logged**: API base URL hardcoded (`http://localhost:5000`), no loading skeletons, navbar not mobile-tested.
+
+---
 
 ## 2026-07-17 — Reviews and ratings complete
 

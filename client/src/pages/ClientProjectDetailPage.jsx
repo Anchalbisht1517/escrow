@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function ClientProjectDetailPage() {
@@ -17,14 +17,8 @@ function ClientProjectDetailPage() {
     const fetchData = async () => {
         try {
             const [projectRes, bidsRes] = await Promise.all([
-                axios.get(
-                    `http://localhost:5000/api/projects/${projectId}/public`,
-                    { withCredentials: true }
-                ),
-                axios.get(
-                    `http://localhost:5000/api/bids/${projectId}/all`,
-                    { withCredentials: true }
-                ),
+                API.get(`/api/projects/${projectId}/public`),
+                API.get(`/api/bids/${projectId}/all`),
             ])
             setProject(projectRes.data.data.project)
             setBids(bidsRes.data.data.bids)
@@ -43,11 +37,7 @@ function ClientProjectDetailPage() {
         setActionLoading(bidId)
         setMessage('')
         try {
-            await axios.patch(
-                `http://localhost:5000/api/bids/${projectId}/accept`,
-                { bidId },
-                { withCredentials: true }
-            )
+            await API.patch(`/api/bids/${projectId}/accept`, { bidId })
             setMessage('Bid accepted! Escrow locked successfully.')
             fetchData() // refresh data
         } catch (err) {
@@ -61,11 +51,7 @@ function ClientProjectDetailPage() {
         setActionLoading(bidId)
         setMessage('')
         try {
-            await axios.patch(
-                `http://localhost:5000/api/bids/bid/${bidId}/reject`,
-                {},
-                { withCredentials: true }
-            )
+            await API.patch(`/api/bids/bid/${bidId}/reject`, {})
             setMessage('Bid rejected.')
             fetchData()
         } catch (err) {
@@ -79,11 +65,7 @@ function ClientProjectDetailPage() {
         setActionLoading('complete')
         setMessage('')
         try {
-            await axios.patch(
-                `http://localhost:5000/api/projects/${projectId}/complete`,
-                {},
-                { withCredentials: true }
-            )
+            await API.patch(`/api/projects/${projectId}/complete`, {})
             setMessage('Project marked as complete! Payment released to freelancer.')
             fetchData()
         } catch (err) {
@@ -98,10 +80,7 @@ function ClientProjectDetailPage() {
         setActionLoading('cancel')
         setMessage('')
         try {
-            await axios.delete(
-                `http://localhost:5000/api/projects/${projectId}`,
-                { withCredentials: true }
-            )
+            await API.delete(`/api/projects/${projectId}`)
             setMessage('Project cancelled. Escrow refunded to your wallet.')
             fetchData()
         } catch (err) {

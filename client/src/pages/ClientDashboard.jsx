@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function ClientDashboard() {
@@ -13,12 +13,8 @@ function ClientDashboard() {
         const fetchData = async () => {
             try {
                 const [projectsRes, walletRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/projects', {
-                        withCredentials: true,
-                    }),
-                    axios.get('http://localhost:5000/api/users/wallet', {
-                        withCredentials: true,
-                    }),
+                    API.get('/api/projects'),
+                    API.get('/api/users/wallet'),
                 ])
                 setProjects(projectsRes.data.data.projects)
                 setWallet(walletRes.data.data)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function PostProjectPage() {
@@ -29,19 +29,15 @@ function PostProjectPage() {
         setError('')
 
         try {
-            await axios.post(
-                'http://localhost:5000/api/projects',
-                {
-                    ...form,
-                    budgetMin: Number(form.budgetMin),
-                    budgetMax: Number(form.budgetMax),
-                    skillsRequired: form.skillsRequired
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                },
-                { withCredentials: true }
-            )
+            await API.post('/api/projects', {
+                ...form,
+                budgetMin: Number(form.budgetMin),
+                budgetMax: Number(form.budgetMax),
+                skillsRequired: form.skillsRequired
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+            })
             setSuccess(true)
         } catch (err) {
             setError(err.response?.data?.message || 'Something went wrong')

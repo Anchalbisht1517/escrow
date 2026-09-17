@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 // ── Shared input component ──────────────────────────────────────────
@@ -76,8 +76,8 @@ function EditProfilePage() {
         setMessage(null)
 
         const endpoint = isFreelancer
-            ? 'http://localhost:5000/api/auth/freelancer/profile'
-            : 'http://localhost:5000/api/auth/client/profile'
+            ? '/api/auth/freelancer/profile'
+            : '/api/auth/client/profile'
 
         try {
             const payload = isFreelancer
@@ -111,7 +111,7 @@ function EditProfilePage() {
                     companyDesc: form.companyDesc,
                 }
 
-            await axios.put(endpoint, payload, { withCredentials: true })
+            await API.put(endpoint, payload)
             await refreshUser()
             setMessage({ type: 'success', text: 'Profile updated successfully!' })
         } catch (err) {

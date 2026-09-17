@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 
 function RegisterPage() {
     const [firstName, setFirstName] = useState('')
@@ -17,7 +17,7 @@ function RegisterPage() {
         setError('')
 
         try {
-            await axios.post('http://localhost:5000/api/auth/register', {
+            await API.post('/api/auth/register', {
                 firstName,
                 lastName,
                 email,

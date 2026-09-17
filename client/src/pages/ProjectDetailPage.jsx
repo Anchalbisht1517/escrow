@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function ProjectDetailPage() {
@@ -22,10 +22,7 @@ function ProjectDetailPage() {
     useEffect(() => {
         const fetchProject = async () => {
             try {
-                const response = await axios.get(
-                    `http://localhost:5000/api/projects/${projectId}/public`,
-                    { withCredentials: true }
-                )
+                const response = await API.get(`/api/projects/${projectId}/public`)
                 setProject(response.data.data.project) // ← add .project here
             } catch (err) {
                 setError('Project not found')
@@ -42,16 +39,12 @@ function ProjectDetailPage() {
         setBidError('')
 
         try {
-            await axios.post(
-                `http://localhost:5000/api/bids/${projectId}/place`,
-                {
-                    projectId,
-                    amount: Number(bidAmount),
-                    estimatedDays: Number(estimatedDays),
-                    coverLetter,
-                },
-                { withCredentials: true }
-            )
+            await API.post(`/api/bids/${projectId}/place`, {
+                projectId,
+                amount: Number(bidAmount),
+                estimatedDays: Number(estimatedDays),
+                coverLetter,
+            })
             setBidSuccess(true)
         } catch (err) {
             setBidError(err.response?.data?.message || 'Failed to place bid')

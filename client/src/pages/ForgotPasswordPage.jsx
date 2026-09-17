@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 
 function ForgotPasswordPage() {
     const [email, setEmail] = useState('')
@@ -12,7 +12,7 @@ function ForgotPasswordPage() {
         setLoading(true)
         setError('')
         try {
-            await axios.post('http://localhost:5000/api/auth/forgot-password', { email })
+            await API.post('/api/auth/forgot-password', { email })
             setSent(true)
         } catch (err) {
             setError(err.response?.data?.message || 'Something went wrong')

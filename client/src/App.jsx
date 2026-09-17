@@ -13,6 +13,7 @@ import BrowseProjectsPage from './pages/BrowseProjectsPage'
 import EditProfilePage from './pages/EditProfilePage'
 import FreelancerProfilePage from './pages/FreelancerProfilePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import Fun from './pages/fun'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -91,6 +92,13 @@ function App() {
         {/* Public — no auth needed, matches backend route */}
         <Route path="/freelancers/:id" element={<FreelancerProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="/fun"
+          element={
+            <Fun />
+          }
+
+        />
       </Routes>
     </BrowserRouter>
   )

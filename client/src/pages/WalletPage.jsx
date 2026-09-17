@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import axios from 'axios'
+import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
 
 function WalletPage() {
@@ -13,10 +13,7 @@ function WalletPage() {
 
     const fetchWallet = async () => {
         try {
-            const res = await axios.get(
-                'http://localhost:5000/api/users/wallet',
-                { withCredentials: true }
-            )
+            const res = await API.get('/api/users/wallet')
             setWallet(res.data.data)
         } catch (err) {
             console.error('Wallet fetch error:', err)
@@ -35,11 +32,7 @@ function WalletPage() {
         setTopupMessage('')
 
         try {
-            await axios.post(
-                'http://localhost:5000/api/users/wallet/topup',
-                { amount: Number(topupAmount) },
-                { withCredentials: true }
-            )
+            await API.post('/api/users/wallet/topup', { amount: Number(topupAmount) })
             setTopupMessage(`₹${topupAmount} added successfully!`)
             setTopupAmount('')
             fetchWallet()
