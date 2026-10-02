@@ -458,3 +458,60 @@ ting` in sync, with top-level fields winning on conflict. Data Models table upda
 Full codebase scan performed across all models, routes, controllers, middleware, utils, and config files.
 Document captures the current state of the project as of this date, including known issues (latent `companyName` populate bug, `asyncHandler` unused, `hireFreelancer` vs `acceptBid` inconsistency), pending decisions (AI features, security deposit), and all architecture rules.
 Previous AGENTS.md existed with corrupted/garbled lines and inaccuracies — replaced entirely with this scan-based version.
+
+---
+
+## 2026-10-01 — MongoDB Atlas migration + dotenv fix + sliding auth UI
+
+### Database: Migrated from local MongoDB to MongoDB Atlas
+
+- **Migration script created** at `scripts/migrateToAtlas.js` — a Node.js script using two simultaneous Mongoose connections (local + Atlas). Iterates all collections via `listCollections()` and uses `insertMany` to copy every document. Migrated: `users` (21 docs), `projects` (7 docs), `bids` (7 docs), `transactions` (1 doc).
+- **`MONGO_URI` updated** in root `.env` from `mongodb://127.0.0.1:27017/escrow` to `mongodb+srv://...@escrowclustor.bgftjpc.mongodb.net/escrow`. All backend connections now point to Atlas.
+- **`mongodump` was not available** on Windows — migration done entirely via the Node.js script instead.
+
+### Backend: Fixed dotenv path resolution
+
+- **Problem**: The `.env` file lives at the project root (`escrow/.env`) but `backend/` is the working directory when running `npm start`. `dotenv/config` searched for `.env` inside `backend/` where it does not exist, leaving `RAZORPAY_KEY_ID` and other vars undefined. Razorpay SDK threw on startup because `key_id` was `undefined`.
+- **Fix in `backend/server.js`**: Replaced `import 'dotenv/config'` with an explicit `dotenv.config({ path: path.resolve(__dirname, '../.env') })` (using `fileURLToPath` + `path.dirname` for ESM `__dirname` equivalent). A second `dotenv.config()` call covers any `.env` co-located with `server.js`.
+- **Fix in `backend/config/razorpay.js`**: Same `dotenv.config` with resolved root path added. Razorpay instance also falls back to `'rzp_test_placeholder'` / `'placeholder_secret'` strings to avoid hard crashing in environments where Razorpay is not yet configured.
+- **Verified**: Server now starts cleanly with `✅ Environment variables validated` → `server is listening at 5000` → `Mongodb connected successfully`.
+
+### Frontend: Unified sliding authentication UI (`LoginPage.jsx` + `App.jsx`)
+
+- **`LoginPage.jsx` rewritten** — merged Login and Register into a single component with a sliding dual-panel design. Both `/login` and `/register` routes render this single component.
+- **`RegisterPage.jsx` preserved untouched** — not deleted; routing simply bypasses it.
+- **`App.jsx` updated** — `/register` route changed from `<RegisterPage />` to `<LoginPage />`. `LoginPage` auto-detects the initial path via `useLocation()` to start on the correct panel.
+- **URL stays in sync** — `window.history.replaceState` updates the URL bar between `/login` and `/register` on panel switch without any page reload or React Router navigation.
+- **All original logic preserved exactly**:
+  - Login: calls `login()` from `AuthContext` → `POST /api/auth/login` → redirects to `/client/dashboard` or `/freelancer/dashboard` by role.
+  - Register: calls `API.post('/api/auth/register', {...})` directly → shows email verification success state.
+  - Error handling, loading states, validation, and cookie/session behavior are unchanged.
+
+**Sliding animation mechanics:**
+
+```
+CARD (860px wide, overflow: hidden)
+┌──────────────────┬──────────────────┐
+│   Sign-In form   │  Sign-Up form    │
+│   (left half)    │  (right half)    │
+└──────────────────┴──────────────────┘
+
+OVERLAY (position: absolute, width: 50%, left: 0)
+  - isSignUp=false → transform: translateX(100.1%)  → sits on right half → Login form visible
+  - isSignUp=true  → transform: translateX(0)       → sits on left half  → Register form visible
+  Transition: 0.65s cubic-bezier(0.65, 0, 0.35, 1)
+```
+
+- **Overlay content** is dynamic: shows "New here? → SIGN UP" when covering the right half, "Already have an account? → SIGN IN" when covering the left half.
+- **Mobile layout** (< 700px): replaces the sliding overlay with a tab switcher (two-button segmented control). No horizontal overflow.
+- **Background**: abstract geometric Bauhaus-style image (`client/public/auth-bg.png`) applied as `background: url(/auth-bg.png) center/cover no-repeat` on both mobile and desktop wrappers.
+- **Overlay translateX adjusted by user** to `100.1%` (was `100%`) to eliminate a 1px subpixel gap visible on some screens.
+
+### 2026-10-01 (Addendum) — Sliding Auth UI Polish: Dual-Card Images, Cross-Fade & Hardware Acceleration
+
+- **Page Sizing & Scrollbar Fix**: Added global reset styles in `client/src/index.css` (`html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }`) and enforced `width: 100vw`, `height: 100vh` on `LoginPage.jsx` wrappers to eliminate viewport scrolling and image overflow.
+- **Dual Background Images (`card.png` & `card2.png`)**: Replaced solid color gradient on the sliding card overlay with user-provided images (`/card.png` for Sign Up state / left position; `/card2.png` for Sign In state / right position) fitted with `background-size: 100% 100%`.
+- **Synchronized 60fps Cross-Fade Animation**: Implemented dual-layered absolute `div` elements inside the sliding overlay container. Overlays use `opacity` transitions (`willChange: opacity`) synchronized with the slider motion so background images smoothly cross-fade while the card slides left/right across the screen.
+- **GPU Hardware Acceleration & Spring Easing**: Upgraded slider panel transform to 3D GPU acceleration (`transform: translate3d(...)`, `willChange: transform`, `backfaceVisibility: hidden`) and applied an out-expo spring easing curve (`cubic-bezier(0.16, 1, 0.3, 1)`). Duration set to `0.99s` for ultra-smooth 60-120fps motion.
+
+
