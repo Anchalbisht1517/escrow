@@ -357,11 +357,11 @@ export const completeProject = async (req, res) => {
       });
     }
 
-    // Project must be in-progress
-    if (project.status !== 'in-progress') {
+    // Project must be in-progress or under-review to complete
+    if (project.status !== 'in-progress' && project.status !== 'under-review') {
       return res.status(400).json({
         success: false,
-        message: `Project must be 'in-progress' to complete. Current status: '${project.status}'`,
+        message: `Project must be 'in-progress' or 'under-review' to complete. Current status: '${project.status}'`,
         data: null,
       });
     }
