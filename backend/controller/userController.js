@@ -455,7 +455,7 @@ export const getUserPublicProfile = async (req, res) => {
 export const getUserWallet = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select(
-      'walletBalance transactionHistory'
+      'walletBalance transactionHistory role'
     );
     if (!user) {
       return res.status(404).json({
@@ -464,11 +464,37 @@ export const getUserWallet = async (req, res) => {
         data: null,
       });
     }
+
+    // Calculate total amount currently locked in escrow across active projects
+    let lockedInEscrow = 0;
+    let escrowProjects = [];
+    if (user.role === 'client') {
+      // Sum escrow from all projects this client has locked
+      const activeProjects = await Project.find({
+        client: user._id,
+        escrowStatus: 'locked',
+        status: { $in: ['in-progress', 'under-review'] },
+      }).select('title escrowAmount status');
+      lockedInEscrow = activeProjects.reduce((sum, p) => sum + (p.escrowAmount || 0), 0);
+      escrowProjects = activeProjects;
+    } else if (user.role === 'freelancer') {
+      // For freelancer — show projects where they are hired and escrow is locked
+      const activeProjects = await Project.find({
+        hiredFreelancer: user._id,
+        escrowStatus: 'locked',
+        status: { $in: ['in-progress', 'under-review'] },
+      }).select('title escrowAmount status');
+      lockedInEscrow = activeProjects.reduce((sum, p) => sum + (p.escrowAmount || 0), 0);
+      escrowProjects = activeProjects;
+    }
+
     return res.status(200).json({
       success: true,
       message: 'User wallet details retrieved successfully',
       data: {
         walletBalance: user.walletBalance,
+        lockedInEscrow,
+        escrowProjects,
         transactionHistory: user.transactionHistory || [],
       },
     });
