@@ -5,10 +5,6 @@ import Navbar from '../components/Navbar'
 function BrowseProjectsPage() {
     const [projects, setProjects] = useState([])
     const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState('')
-    const [skillFilter, setSkillFilter] = useState('')
-    const [budgetMin, setBudgetMin] = useState('')
-    const [budgetMax, setBudgetMax] = useState('')
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
 
@@ -16,10 +12,6 @@ function BrowseProjectsPage() {
         setLoading(true)
         try {
             const params = new URLSearchParams()
-            if (search) params.append('search', search)
-            if (skillFilter) params.append('skills', skillFilter)
-            if (budgetMin) params.append('budgetMin', budgetMin)
-            if (budgetMax) params.append('budgetMax', budgetMax)
             params.append('page', page)
             params.append('limit', 10)
 
@@ -37,21 +29,6 @@ function BrowseProjectsPage() {
         fetchProjects()
     }, [page])
 
-    const handleSearch = (e) => {
-        e.preventDefault()
-        setPage(1)
-        fetchProjects()
-    }
-
-    const handleClear = () => {
-        setSearch('')
-        setSkillFilter('')
-        setBudgetMin('')
-        setBudgetMax('')
-        setPage(1)
-        fetchProjects()
-    }
-
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
@@ -68,83 +45,7 @@ function BrowseProjectsPage() {
                     </p>
                 </div>
 
-                {/* Search and filters */}
-                <form
-                    onSubmit={handleSearch}
-                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-                        {/* Search */}
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Search
-                            </label>
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search by keyword..."
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                            />
-                        </div>
-
-                        {/* Skills filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Skills
-                            </label>
-                            <input
-                                type="text"
-                                value={skillFilter}
-                                onChange={(e) => setSkillFilter(e.target.value)}
-                                placeholder="e.g. React, Node.js"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                            />
-                        </div>
-
-                        {/* Budget filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Budget Range (₹)
-                            </label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    value={budgetMin}
-                                    onChange={(e) => setBudgetMin(e.target.value)}
-                                    placeholder="Min"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                                />
-                                <input
-                                    type="number"
-                                    value={budgetMax}
-                                    onChange={(e) => setBudgetMax(e.target.value)}
-                                    placeholder="Max"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                                />
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* Filter buttons */}
-                    <div className="flex gap-3 mt-4">
-                        <button
-                            type="submit"
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-                        >
-                            Search
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleClear}
-                            className="px-6 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50"
-                        >
-                            Clear Filters
-                        </button>
-                    </div>
-                </form>
+                {/* Search & filter UI removed — will be added later */}
 
                 {/* Results */}
                 {loading ? (

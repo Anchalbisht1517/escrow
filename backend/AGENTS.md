@@ -514,4 +514,18 @@ OVERLAY (position: absolute, width: 50%, left: 0)
 - **Synchronized 60fps Cross-Fade Animation**: Implemented dual-layered absolute `div` elements inside the sliding overlay container. Overlays use `opacity` transitions (`willChange: opacity`) synchronized with the slider motion so background images smoothly cross-fade while the card slides left/right across the screen.
 - **GPU Hardware Acceleration & Spring Easing**: Upgraded slider panel transform to 3D GPU acceleration (`transform: translate3d(...)`, `willChange: transform`, `backfaceVisibility: hidden`) and applied an out-expo spring easing curve (`cubic-bezier(0.16, 1, 0.3, 1)`). Duration set to `0.99s` for ultra-smooth 60-120fps motion.
 
+---
 
+## ⏳ Deferred Features — To Be Added Later
+
+These features have been intentionally removed or skipped for now. Do NOT implement them until explicitly asked.
+
+### 1. Browse Projects — Search & Filter UI
+
+- **What was removed**: The search box, skills filter, and budget range filter from `client/src/pages/BrowseProjectsPage.jsx` were removed to keep the page clean for now.
+- **What the backend already supports**: `GET /api/projects` accepts these query params (already implemented in `listProjects` in `projectController.js`):
+  - `?search=keyword` — searches title + description
+  - `?skills=react,node` — filters by required skills (comma-separated)
+  - `?budgetMin=500&budgetMax=5000` — filters by budget range
+  - `?page=1&limit=10` — pagination
+- **When to re-add**: Add the filter UI back to `BrowseProjectsPage.jsx` when asked. The backend needs no changes — just restore the form, state variables, and connect them to the existing API params.
