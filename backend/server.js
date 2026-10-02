@@ -20,6 +20,7 @@ import { router } from './routes/userRoute.js';
 import usersRouter from './routes/usersRoute.js';
 import projectRouter from './routes/projectRoute.js';
 import bidRouter from './routes/bidRoute.js';
+import notificationRouter from './routes/notificationRoute.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 validateEnv();
@@ -108,6 +109,7 @@ app.use('/api/auth', router);
 app.use('/api/users', usersRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/bids', bidRouter);
+app.use('/api/notifications', notificationRouter);
 
 app.get('/', (req, res) => {
   res.send('hello');

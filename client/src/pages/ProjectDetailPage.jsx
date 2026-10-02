@@ -280,48 +280,18 @@ function ProjectDetailPage() {
                             </div>
                         )}
 
-                        {/* In Progress Workspace View for Hired Freelancer */}
-                        {project.status === 'in-progress' && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer)) && (
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 text-emerald-800 font-bold text-lg mb-2">
-                                    <span>🎉</span>
-                                    <h3>You are hired!</h3>
-                                </div>
-                                <p className="text-sm text-emerald-700 mb-4 leading-relaxed">
-                                    You are actively working on this project. Deliver the agreed work to the client.
-                                </p>
-
-                                <div className="bg-white rounded-xl p-4 border border-emerald-100 space-y-3 text-sm mb-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-500">Escrow Security</span>
-                                        <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                                            🔒 ₹{project.escrowAmount || project.budgetMax} Locked
-                                        </span>
-                                    </div>
-                                    {project.client && (
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-gray-500">Client</span>
-                                            <span className="font-semibold text-gray-800">
-                                                {project.client.firstName} {project.client.lastName}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-500">Project Status</span>
-                                        <span className="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold">
-                                            In Progress
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <p className="text-xs text-emerald-800/70 text-center leading-relaxed">
-                                    Escrow funds will be released to your wallet once the client completes the project.
-                                </p>
-                            </div>
+                        {/* In Progress / Under Review Workspace View for Hired Freelancer */}
+                        {(project.status === 'in-progress' || project.status === 'under-review') && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer)) && (
+                            <WorkspaceCard
+                                project={project}
+                                user={user}
+                                projectId={projectId}
+                                onStatusChange={setProject}
+                            />
                         )}
 
                         {/* Show generic closed message if project not open and user is NOT the hired freelancer */}
-                        {project.status !== 'open' && !(project.status === 'in-progress' && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer))) && (
+                        {project.status !== 'open' && !((project.status === 'in-progress' || project.status === 'under-review') && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer))) && (
                             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center">
                                 <p className="text-gray-500 text-sm">
                                     This project is no longer accepting bids
@@ -337,3 +307,104 @@ function ProjectDetailPage() {
 }
 
 export default ProjectDetailPage
+
+// ─── Workspace Card — shown to hired freelancer ───
+function WorkspaceCard({ project, projectId, onStatusChange }) {
+    const [submitting, setSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState('')
+    const [submitSuccess, setSubmitSuccess] = useState(false)
+
+    const handleSubmitWork = async () => {
+        if (!window.confirm('Submit your work for client review? The client will be notified.')) return
+        setSubmitting(true)
+        setSubmitError('')
+        try {
+            const res = await API.patch(`/api/projects/${projectId}/submit`, {})
+            onStatusChange(res.data.data.project)
+            setSubmitSuccess(true)
+        } catch (err) {
+            setSubmitError(err.response?.data?.message || 'Failed to submit work')
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const isUnderReview = project.status === 'under-review'
+
+    return (
+        <div className={`rounded-2xl p-6 shadow-sm border ${isUnderReview ? 'bg-purple-50 border-purple-200' : 'bg-emerald-50 border-emerald-200'}`}>
+            {/* Header */}
+            <div className={`flex items-center gap-2 font-bold text-lg mb-2 ${isUnderReview ? 'text-purple-800' : 'text-emerald-800'}`}>
+                <span>{isUnderReview ? '📤' : '🎉'}</span>
+                <h3>{isUnderReview ? 'Work Submitted — Awaiting Review' : 'You are hired!'}</h3>
+            </div>
+            <p className={`text-sm mb-4 leading-relaxed ${isUnderReview ? 'text-purple-700' : 'text-emerald-700'}`}>
+                {isUnderReview
+                    ? 'Your work has been submitted. The client is reviewing it. You\'ll be notified once they approve or request changes.'
+                    : 'You are actively working on this project. Once done, submit your work for client review.'}
+            </p>
+
+            {/* Info card */}
+            <div className={`bg-white rounded-xl p-4 border space-y-3 text-sm mb-4 ${isUnderReview ? 'border-purple-100' : 'border-emerald-100'}`}>
+                <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Escrow Security</span>
+                    <span className={`font-semibold flex items-center gap-1 ${isUnderReview ? 'text-purple-600' : 'text-emerald-600'}`}>
+                        🔒 ₹{project.escrowAmount || project.budgetMax} Locked
+                    </span>
+                </div>
+                {project.client && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Client</span>
+                        <span className="font-semibold text-gray-800">
+                            {project.client.firstName} {project.client.lastName}
+                        </span>
+                    </div>
+                )}
+                <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Status</span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isUnderReview ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {isUnderReview ? 'Under Review' : 'In Progress'}
+                    </span>
+                </div>
+                {project.workSubmittedAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Submitted</span>
+                        <span className="text-gray-700 text-xs">
+                            {new Date(project.workSubmittedAt).toLocaleString()}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Submit Work button */}
+            {!isUnderReview && (
+                <>
+                    {submitError && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-lg mb-3">
+                            {submitError}
+                        </div>
+                    )}
+                    {submitSuccess ? (
+                        <div className="bg-purple-100 text-purple-800 text-sm font-medium text-center py-2.5 rounded-lg">
+                            ✅ Work submitted! Client has been notified.
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleSubmitWork}
+                            disabled={submitting}
+                            className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                        >
+                            {submitting ? 'Submitting...' : '📤 Submit Work for Review'}
+                        </button>
+                    )}
+                </>
+            )}
+
+            {isUnderReview && (
+                <p className="text-xs text-purple-800/70 text-center leading-relaxed">
+                    Payment will be released to your wallet once the client approves the work.
+                </p>
+            )}
+        </div>
+    )
+}

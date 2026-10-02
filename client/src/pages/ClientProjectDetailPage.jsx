@@ -66,10 +66,26 @@ function ClientProjectDetailPage() {
         setMessage('')
         try {
             await API.patch(`/api/projects/${projectId}/complete`, {})
-            setMessage('Project marked as complete! Payment released to freelancer.')
+            setMessage('✅ Payment approved and released to the freelancer!')
             fetchData()
         } catch (err) {
             setMessage(err.response?.data?.message || 'Failed to complete project')
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleRequestRevision = async () => {
+        const note = window.prompt('Optional: Leave a note for the freelancer about what to change:')
+        if (note === null) return // user cancelled
+        setActionLoading('revision')
+        setMessage('')
+        try {
+            await API.patch(`/api/projects/${projectId}/revision`, { message: note })
+            setMessage('🔄 Revision requested. Freelancer has been notified.')
+            fetchData()
+        } catch (err) {
+            setMessage(err.response?.data?.message || 'Failed to request revision')
         } finally {
             setActionLoading(null)
         }
@@ -139,15 +155,18 @@ function ClientProjectDetailPage() {
                         <h1 className="text-2xl font-bold text-gray-900">
                             {project.title}
                         </h1>
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${project.status === 'open'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : project.status === 'in-progress'
-                                ? 'bg-blue-100 text-blue-700'
-                                : project.status === 'completed'
-                                    ? 'bg-gray-100 text-gray-600'
-                                    : 'bg-red-100 text-red-600'
-                            }`}>
-                            {project.status}
+                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                            project.status === 'open'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : project.status === 'in-progress'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : project.status === 'under-review'
+                                        ? 'bg-purple-100 text-purple-700'
+                                        : project.status === 'completed'
+                                            ? 'bg-gray-100 text-gray-600'
+                                            : 'bg-red-100 text-red-600'
+                        }`}>
+                            {project.status === 'under-review' ? '📤 Under Review' : project.status}
                         </span>
                     </div>
 
@@ -176,8 +195,44 @@ function ClientProjectDetailPage() {
                         )}
                     </div>
 
+                    {/* Under-review banner */}
+                    {project.status === 'under-review' && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-4 mt-4 flex items-start gap-3">
+                            <span className="text-2xl mt-0.5">📤</span>
+                            <div className="flex-1">
+                                <p className="font-bold text-purple-800 text-sm">Work has been submitted for review</p>
+                                <p className="text-purple-600 text-xs mt-0.5 leading-relaxed">
+                                    The freelancer has delivered their work. Please review and either approve the payment or request a revision.
+                                </p>
+                                {project.workSubmittedAt && (
+                                    <p className="text-purple-400 text-xs mt-1">
+                                        Submitted: {new Date(project.workSubmittedAt).toLocaleString()}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Action buttons */}
-                    <div className="flex gap-3 mt-6">
+                    <div className="flex flex-wrap gap-3 mt-6">
+                        {project.status === 'under-review' && (
+                            <>
+                                <button
+                                    onClick={handleCompleteProject}
+                                    disabled={actionLoading === 'complete'}
+                                    className="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
+                                >
+                                    {actionLoading === 'complete' ? 'Processing...' : '✅ Approve & Release Payment'}
+                                </button>
+                                <button
+                                    onClick={handleRequestRevision}
+                                    disabled={actionLoading === 'revision'}
+                                    className="px-5 py-2 border border-purple-300 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-50 disabled:opacity-50"
+                                >
+                                    {actionLoading === 'revision' ? 'Processing...' : '🔄 Request Revision'}
+                                </button>
+                            </>
+                        )}
                         {project.status === 'in-progress' && (
                             <button
                                 onClick={handleCompleteProject}
@@ -187,7 +242,7 @@ function ClientProjectDetailPage() {
                                 {actionLoading === 'complete' ? 'Processing...' : '✓ Mark as Complete'}
                             </button>
                         )}
-                        {(project.status === 'open' || project.status === 'in-progress') && (
+                        {(project.status === 'open' || project.status === 'in-progress' || project.status === 'under-review') && (
                             <button
                                 onClick={handleCancelProject}
                                 disabled={actionLoading === 'cancel'}

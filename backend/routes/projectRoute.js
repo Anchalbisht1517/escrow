@@ -9,6 +9,8 @@ import {
   editProject,
   cancelProject,
   completeProject,
+  submitWork,
+  requestRevision,
 } from '../controller/projectController.js';
 
 const router = express.Router();
@@ -55,5 +57,23 @@ router.patch(
 
 // HIRE: Only client can hire a freelancer for their project
 // Note: Use PATCH /bids/:id/accept instead — it locks escrow atomically
+
+// SUBMIT WORK: Hired freelancer marks work as done for review
+router.patch(
+  '/:id/submit',
+  protect,
+  restrictTo('freelancer'),
+  isProjectParticipant,
+  submitWork
+);
+
+// REQUEST REVISION: Client sends project back from under-review → in-progress
+router.patch(
+  '/:id/revision',
+  protect,
+  restrictTo('client'),
+  isProjectParticipant,
+  requestRevision
+);
 
 export default router;

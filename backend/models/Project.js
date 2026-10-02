@@ -67,9 +67,15 @@ const projectSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['open', 'in-progress', 'completed', 'cancelled'],
+      enum: ['open', 'in-progress', 'under-review', 'completed', 'cancelled', 'disputed'],
       default: 'open',
       index: true,
+    },
+
+    // Tracks when work was submitted for review
+    workSubmittedAt: {
+      type: Date,
+      default: null,
     },
 
     // ─── ESCROW ───

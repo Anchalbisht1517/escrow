@@ -1,6 +1,16 @@
 import Bid from '../models/Bid.js';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+
+// ─── HELPER: create a notification without blocking the response ───
+const notify = async ({ recipient, sender = null, type, message, project = null }) => {
+  try {
+    await Notification.create({ recipient, sender, type, message, project });
+  } catch (err) {
+    console.error('Notification creation failed silently:', err.message);
+  }
+};
 
 // ─── PLACE A BID (Freelancer only) ───
 export const placeBid = async (req, res) => {
@@ -47,6 +57,15 @@ export const placeBid = async (req, res) => {
 
     // 3.7 ─── Auto-increment totalBids on Project when bid is submitted ───
     await Project.findByIdAndUpdate(projectId, { $inc: { totalBids: 1 } });
+
+    // Notify the client that a new bid has arrived
+    await notify({
+      recipient: project.client,
+      sender: req.user._id,
+      type: 'bid_placed',
+      message: `${req.user.firstName} ${req.user.lastName} placed a bid of ₹${amount} on "${project.title}".`,
+      project: project._id,
+    });
 
     return res.status(201).json({
       success: true,
@@ -153,6 +172,15 @@ export const acceptBid = async (req, res) => {
     project.escrowAmount = bid.amount;
     project.escrowStatus = 'locked';
     await project.save();
+
+    // Notify hired freelancer
+    await notify({
+      recipient: bid.freelancer,
+      sender: req.user._id,
+      type: 'bid_accepted',
+      message: `Your bid of ₹${bid.amount} on "${project.title}" was accepted! Escrow is locked — start working.`,
+      project: project._id,
+    });
 
     return res.status(200).json({
       success: true,
@@ -305,6 +333,15 @@ export const rejectBid = async (req, res) => {
 
     bid.status = 'rejected';
     await bid.save();
+
+    // Notify freelancer their bid was rejected
+    await notify({
+      recipient: bid.freelancer,
+      sender: req.user._id,
+      type: 'bid_rejected',
+      message: `Your bid on "${bid.project.title}" was not selected this time. Keep applying!`,
+      project: bid.project._id,
+    });
 
     return res.status(200).json({
       success: true,

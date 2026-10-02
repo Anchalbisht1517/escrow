@@ -1,6 +1,16 @@
 import Project from '../models/Project.js';
 import Bid from '../models/Bid.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+
+// ─── HELPER: create a notification without blocking the response ───
+const notify = async ({ recipient, sender = null, type, message, project = null }) => {
+  try {
+    await Notification.create({ recipient, sender, type, message, project });
+  } catch (err) {
+    console.error('Notification creation failed silently:', err.message);
+  }
+};
 
 // ─── CREATE PROJECT (Client only) ───
 export const createProject = async (req, res) => {
@@ -391,6 +401,15 @@ export const completeProject = async (req, res) => {
     project.escrowStatus = 'released';
     await project.save();
 
+    // Notify freelancer that payment has been released
+    await notify({
+      recipient: freelancer._id,
+      sender: req.user._id,
+      type: 'payment_released',
+      message: `Payment of ₹${project.escrowAmount} has been released for "${project.title}".`,
+      project: project._id,
+    });
+
     return res.status(200).json({
       success: true,
       message:
@@ -402,6 +421,111 @@ export const completeProject = async (req, res) => {
           freelancerNewBalance: freelancer.walletBalance,
         },
       },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};
+
+// ─── SUBMIT WORK (Hired freelancer only) ───
+// Changes project status from in-progress → under-review and notifies the client.
+export const submitWork = async (req, res) => {
+  try {
+    const project = req.project; // from isProjectParticipant middleware
+
+    // Only the hired freelancer can submit work
+    if (
+      !project.hiredFreelancer ||
+      project.hiredFreelancer.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only the hired freelancer can submit work',
+        data: null,
+      });
+    }
+
+    // Project must be in-progress to submit
+    if (project.status !== 'in-progress') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot submit work: project status is "${project.status}". Must be "in-progress".`,
+        data: null,
+      });
+    }
+
+    project.status = 'under-review';
+    project.workSubmittedAt = new Date();
+    await project.save();
+
+    // Notify client
+    await notify({
+      recipient: project.client,
+      sender: req.user._id,
+      type: 'work_submitted',
+      message: `${req.user.firstName} has submitted work on "${project.title}" — please review and approve.`,
+      project: project._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Work submitted successfully. The client has been notified.',
+      data: { project },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, data: null });
+  }
+};
+
+// ─── REQUEST REVISION (Client only) ───
+// Sends project back from under-review → in-progress when client is not satisfied.
+export const requestRevision = async (req, res) => {
+  try {
+    const project = req.project; // from isProjectParticipant middleware
+
+    // Only the project client can request revision
+    if (project.client.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only the project owner can request a revision',
+        data: null,
+      });
+    }
+
+    // Project must be under-review
+    if (project.status !== 'under-review') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot request revision: project status is "${project.status}". Must be "under-review".`,
+        data: null,
+      });
+    }
+
+    const { message: revisionNote } = req.body;
+
+    project.status = 'in-progress';
+    project.workSubmittedAt = null;
+    await project.save();
+
+    // Notify freelancer
+    await notify({
+      recipient: project.hiredFreelancer,
+      sender: req.user._id,
+      type: 'revision_requested',
+      message: revisionNote
+        ? `Client requested a revision on "${project.title}": ${revisionNote}`
+        : `Client requested a revision on "${project.title}". Please review and resubmit.`,
+      project: project._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Revision requested. The freelancer has been notified.',
+      data: { project },
     });
   } catch (error) {
     return res
