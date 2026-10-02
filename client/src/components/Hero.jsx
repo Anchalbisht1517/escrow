@@ -34,7 +34,7 @@ function Hero() {
                             Post a Project →
                         </a>
                         <a
-                            href="/register"
+                            href="/browse-projects"
                             className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50"
                         >
                             Find Work as Freelancer

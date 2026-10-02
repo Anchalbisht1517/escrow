@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function ProtectedRoute({ children, allowedRole }) {
@@ -12,18 +13,19 @@ function ProtectedRoute({ children, allowedRole }) {
         )
     }
 
-    // Not logged in — redirect to login
+    // Not logged in — redirect to login smoothly
     if (!user) {
-        window.location.href = '/login'
-        return null
+        return <Navigate to="/login" replace />
     }
 
     // Wrong role — redirect to their correct dashboard
     if (allowedRole && user.role !== allowedRole) {
-        window.location.href = user.role === 'client'
-            ? '/client/dashboard'
-            : '/freelancer/dashboard'
-        return null
+        return (
+            <Navigate
+                to={user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard'}
+                replace
+            />
+        )
     }
 
     // All checks passed — show the page

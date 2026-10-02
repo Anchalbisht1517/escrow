@@ -48,14 +48,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/projects/:id"
-          element={
-            <ProtectedRoute>
-              <ProjectDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route
           path="/client/projects/:id"
           element={
@@ -73,14 +66,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/browse-projects"
-          element={
-            <ProtectedRoute>
-              <BrowseProjectsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/browse-projects" element={<BrowseProjectsPage />} />
         <Route
           path="/profile/edit"
           element={

@@ -13,12 +13,12 @@ import {
 
 const router = express.Router();
 
-// PUBLIC: List all open projects with pagination & filtering (any authenticated user)
+// PUBLIC: List all open projects with pagination & filtering (guests and logged in users)
 // Query params: ?skills=react,node&budgetMin=500&budgetMax=5000&search=ecommerce&page=1&limit=10
-router.get('/', protect, listProjects);
+router.get('/', listProjects);
 
-// PUBLIC: Get project public info (any authenticated user)
-router.get('/:id/public', protect, getPublicProject);
+// PUBLIC: Get project public info
+router.get('/:id/public', getPublicProject);
 
 // PRIVATE: Get full project with privateDetails (client or hired freelancer)
 router.get(

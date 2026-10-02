@@ -83,10 +83,10 @@ function ProjectDetailPage() {
 
                 {/* Back link */}
                 <a
-                    href="/freelancer/dashboard"
+                    href="/browse-projects"
                     className="text-sm text-indigo-600 hover:underline mb-6 inline-block"
                 >
-                    ← Back to Dashboard
+                    ← Back to Projects
                 </a>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -255,6 +255,28 @@ function ProjectDetailPage() {
 
                                     </form>
                                 )}
+                            </div>
+                        )}
+
+                        {!user && project.status === 'open' && (
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                                <div className="text-3xl mb-3">💼</div>
+                                <h3 className="font-bold text-gray-800 mb-2">Interested in this project?</h3>
+                                <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                                    Sign in as a freelancer to submit a proposal and place your bid.
+                                </p>
+                                <a
+                                    href="/login"
+                                    className="block w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 mb-2.5 text-center text-sm"
+                                >
+                                    Log In to Bid
+                                </a>
+                                <a
+                                    href="/register"
+                                    className="block w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 text-center text-sm"
+                                >
+                                    Create an Account
+                                </a>
                             </div>
                         )}
 
