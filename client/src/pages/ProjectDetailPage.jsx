@@ -280,8 +280,48 @@ function ProjectDetailPage() {
                             </div>
                         )}
 
-                        {/* Show message if project not open */}
-                        {project.status !== 'open' && (
+                        {/* In Progress Workspace View for Hired Freelancer */}
+                        {project.status === 'in-progress' && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer)) && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 shadow-sm">
+                                <div className="flex items-center gap-2 text-emerald-800 font-bold text-lg mb-2">
+                                    <span>🎉</span>
+                                    <h3>You are hired!</h3>
+                                </div>
+                                <p className="text-sm text-emerald-700 mb-4 leading-relaxed">
+                                    You are actively working on this project. Deliver the agreed work to the client.
+                                </p>
+
+                                <div className="bg-white rounded-xl p-4 border border-emerald-100 space-y-3 text-sm mb-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500">Escrow Security</span>
+                                        <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                                            🔒 ₹{project.escrowAmount || project.budgetMax} Locked
+                                        </span>
+                                    </div>
+                                    {project.client && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500">Client</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {project.client.firstName} {project.client.lastName}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500">Project Status</span>
+                                        <span className="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold">
+                                            In Progress
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-emerald-800/70 text-center leading-relaxed">
+                                    Escrow funds will be released to your wallet once the client completes the project.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Show generic closed message if project not open and user is NOT the hired freelancer */}
+                        {project.status !== 'open' && !(project.status === 'in-progress' && user && (user._id === (project.hiredFreelancer?._id || project.hiredFreelancer))) && (
                             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center">
                                 <p className="text-gray-500 text-sm">
                                     This project is no longer accepting bids

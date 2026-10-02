@@ -89,11 +89,28 @@ export const listProjects = async (req, res) => {
       budgetMin,
       budgetMax,
       search,
+      status,
+      hiredFreelancer,
+      client,
       page = 1,
       limit = 10,
     } = req.query;
 
-    const filter = { status: 'open' };
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    } else if (!hiredFreelancer && !client) {
+      filter.status = 'open';
+    }
+
+    if (hiredFreelancer) {
+      filter.hiredFreelancer = hiredFreelancer;
+    }
+
+    if (client) {
+      filter.client = client;
+    }
 
     // Filter by required skills (any match)
     if (skills) {
@@ -132,6 +149,7 @@ export const listProjects = async (req, res) => {
       Project.find(filter)
         .select('-privateDetails')
         .populate('client', 'firstName lastName clientInfo')
+        .populate('hiredFreelancer', 'firstName lastName')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
