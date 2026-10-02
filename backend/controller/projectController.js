@@ -2,6 +2,7 @@ import Project from '../models/Project.js';
 import Bid from '../models/Bid.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Transaction from '../models/Transaction.js';
 
 // ─── HELPER: create a notification without blocking the response ───
 const notify = async ({ recipient, sender = null, type, message, project = null }) => {
@@ -303,6 +304,19 @@ export const cancelProject = async (req, res) => {
         });
         await client.save();
         project.escrowStatus = 'refunded';
+
+        // ─── LEDGER: Record escrow refund in Transaction collection ───
+        await Transaction.create({
+          user: client._id,
+          amount: project.escrowAmount,
+          type: 'credit',
+          status: 'success',
+          gateway: 'manual',
+          description: `Escrow refunded for cancelled project: ${project.title}`,
+          relatedProject: project._id,
+          escrowEvent: 'escrow_refunded',
+          date: new Date(),
+        });
       }
 
       // Reputation: only in-progress cancellations count against the freelancer.
@@ -395,6 +409,19 @@ export const completeProject = async (req, res) => {
     // Reputation: completed project counts towards freelancer's track record
     freelancer.completedProjectsCount += 1;
     await freelancer.save();
+
+    // ─── LEDGER: Record payment release in Transaction collection ───
+    await Transaction.create({
+      user: freelancer._id,
+      amount: project.escrowAmount,
+      type: 'credit',
+      status: 'success',
+      gateway: 'manual',
+      description: `Payment released for completed project: ${project.title}`,
+      relatedProject: project._id,
+      escrowEvent: 'payment_released',
+      date: new Date(),
+    });
 
     // Update project
     project.status = 'completed';

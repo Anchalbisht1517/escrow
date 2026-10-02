@@ -25,6 +25,25 @@ const transactionSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+
+    // ─── ESCROW LEDGER ───
+    // Set when this transaction is part of the escrow flow.
+    // null for regular wallet top-ups (razorpay).
+    relatedProject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      default: null,
+      index: true,
+    },
+
+    // Describes the specific escrow event that created this transaction.
+    // null for regular wallet top-ups.
+    escrowEvent: {
+      type: String,
+      enum: ['escrow_locked', 'payment_released', 'escrow_refunded', null],
+      default: null,
+    },
+
     gateway: {
       type: String,
       enum: ['razorpay', 'manual'],

@@ -2,6 +2,7 @@ import Bid from '../models/Bid.js';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Transaction from '../models/Transaction.js';
 
 // ─── HELPER: create a notification without blocking the response ───
 const notify = async ({ recipient, sender = null, type, message, project = null }) => {
@@ -154,6 +155,19 @@ export const acceptBid = async (req, res) => {
       date: new Date(),
     });
     await client.save();
+
+    // ─── LEDGER: Record escrow lock in Transaction collection ───
+    await Transaction.create({
+      user: client._id,
+      amount: bid.amount,
+      type: 'debit',
+      status: 'success',
+      gateway: 'manual',
+      description: `Escrow locked for project: ${project.title}`,
+      relatedProject: project._id,
+      escrowEvent: 'escrow_locked',
+      date: new Date(),
+    });
 
     // Reject all other bids
     await Bid.updateMany(
