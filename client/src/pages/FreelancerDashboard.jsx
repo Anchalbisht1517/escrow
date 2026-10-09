@@ -7,21 +7,18 @@ function FreelancerDashboard() {
     const { user } = useAuth()
     const [wallet, setWallet] = useState(null)
     const [myActiveProjects, setMyActiveProjects] = useState([])
-    const [availableProjects, setAvailableProjects] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchData = async () => {
             if (!user?._id) return
             try {
-                const [walletRes, activeRes, availableRes] = await Promise.all([
+                const [walletRes, activeRes] = await Promise.all([
                     API.get('/api/users/wallet'),
                     API.get(`/api/projects?hiredFreelancer=${user._id}&status=in-progress`),
-                    API.get('/api/projects?status=open'),
                 ])
                 setWallet(walletRes.data.data)
                 setMyActiveProjects(activeRes.data.data.projects || [])
-                setAvailableProjects(availableRes.data.data.projects || [])
             } catch (err) {
                 console.error('Dashboard fetch error:', err)
             } finally {
@@ -112,9 +109,15 @@ function FreelancerDashboard() {
                         <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                             <div className="text-3xl mb-2">🚀</div>
                             <p className="text-gray-600 font-medium text-sm">No active projects right now</p>
-                            <p className="text-gray-400 text-xs mt-1">
-                                Apply to available projects below to start earning!
+                            <p className="text-gray-400 text-xs mt-1 mb-3">
+                                Find available projects and start bidding!
                             </p>
+                            <a
+                                href="/browse-projects"
+                                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors"
+                            >
+                                Kaam karle ladle →
+                            </a>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -161,70 +164,6 @@ function FreelancerDashboard() {
                             ))}
                         </div>
                     )}
-                </div>
-
-                {/* SECTION 2: Available Projects (Open to bid) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-gray-800">
-                            Available Projects to Bid
-                        </h2>
-                        <a
-                            href="/browse-projects"
-                            className="text-sm text-indigo-600 hover:underline font-medium"
-                        >
-                            View all →
-                        </a>
-                    </div>
-
-                    {loading ? (
-                        <div className="text-center py-10 text-gray-400">Loading available projects...</div>
-                    ) : availableProjects.length === 0 ? (
-                        <div className="text-center py-10 text-gray-400">
-                            No projects available right now
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {availableProjects.slice(0, 5).map((project) => (
-                                <div
-                                    key={project._id}
-                                    className="border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow"
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-800 mb-1">
-                                                {project.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 mb-2 line-clamp-2">
-                                                {project.description}
-                                            </p>
-                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                {project.skillsRequired?.slice(0, 3).map((skill, i) => (
-                                                    <span
-                                                        key={i}
-                                                        className="bg-indigo-50 text-indigo-600 text-xs px-2 py-1 rounded-full"
-                                                    >
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                            <p className="text-sm text-gray-600">
-                                                {`₹${project.budgetMin} - ₹${project.budgetMax} · ${project.totalBids} bids`}
-                                            </p>
-                                        </div>
-                                        <a
-                                            href={`/projects/${project._id}`}
-                                            className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 whitespace-nowrap"
-                                        >
-                                            View &amp; Bid
-                                        </a>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
                 </div>
 
             </div>

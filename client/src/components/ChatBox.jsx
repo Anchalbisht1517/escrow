@@ -3,16 +3,23 @@ import API from '../api/axiosInstance';
 import socket from '../api/socket';
 import { useAuth } from '../context/AuthContext';
 
-export default function ChatBox({ projectId }) {
+export default function ChatBox({ projectId, projectStatus }) {
   const { user } = useAuth();
   const myId = user?._id || user?.id;
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [canSend, setCanSend] = useState(false);
+  const [canSend, setCanSend] = useState(projectStatus ? projectStatus === 'in-progress' : true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
+
+  // Sync canSend with projectStatus prop whenever it changes
+  useEffect(() => {
+    if (projectStatus !== undefined) {
+      setCanSend(projectStatus === 'in-progress');
+    }
+  }, [projectStatus]);
 
   // Add a message only if it isn't already in the list
   const addMessage = (msg) =>
@@ -26,7 +33,15 @@ export default function ChatBox({ projectId }) {
     const onMessage = (msg) => addMessage(msg);
 
     const join = () => socket.emit('chat:join', projectId, (res) => {
-      if (!res?.ok && active) setError(res?.message || 'Could not join chat');
+      if (!active) return;
+      if (!res?.ok) {
+        setError(res?.message || 'Could not join chat');
+        if (res?.message?.includes('closed') || res?.message?.includes('denied')) {
+          setCanSend(false);
+        }
+      } else if (res?.canSend !== undefined) {
+        setCanSend(res.canSend);
+      }
     });
 
     // 1. Load history
@@ -34,14 +49,25 @@ export default function ChatBox({ projectId }) {
       .then(({ data }) => {
         if (!active) return;
         setMessages(data.data.messages);
-        setCanSend(data.data.canSend);
+        if (projectStatus !== undefined) {
+          setCanSend(projectStatus === 'in-progress');
+        } else {
+          setCanSend(data.data.canSend);
+        }
       })
-      .catch((err) => active && setError(err.response?.data?.message || 'Could not load chat'))
+      .catch((err) => {
+        if (!active) return;
+        const msg = err.response?.data?.message || 'Could not load chat';
+        setError(msg);
+        if (err.response?.status === 403 || msg.includes('closed')) {
+          setCanSend(false);
+        }
+      })
       .finally(() => active && setLoading(false));
 
     // 2. Connect, join the room, listen
     socket.on('chat:message', onMessage);
-    socket.on('connect', join); // re-join after a reconnect
+    socket.on('connect', join);
     if (socket.connected) join();
     else socket.connect();
 
@@ -51,7 +77,7 @@ export default function ChatBox({ projectId }) {
       socket.off('chat:message', onMessage);
       socket.off('connect', join);
     };
-  }, [projectId]);
+  }, [projectId, projectStatus]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,9 +91,15 @@ export default function ChatBox({ projectId }) {
     try {
       const { data } = await API.post(`/api/chat/${projectId}/messages`, { text: value });
       addMessage(data.data.message);
+      setError('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not send message');
-      setText(value);
+      const errMsg = err.response?.data?.message || 'Could not send message';
+      setError(errMsg);
+      if (err.response?.status === 403 || errMsg.includes('closed')) {
+        setCanSend(false);
+      } else {
+        setText(value);
+      }
     }
   };
 
@@ -75,8 +107,13 @@ export default function ChatBox({ projectId }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[28rem]">
-      <div className="px-5 py-3 border-b border-gray-100 font-semibold text-gray-900">
-        Project Chat
+      <div className="px-5 py-3 border-b border-gray-100 font-semibold text-gray-900 flex justify-between items-center">
+        <span>Project Chat</span>
+        {!canSend && (
+          <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+            Chat Closed
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -104,25 +141,26 @@ export default function ChatBox({ projectId }) {
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="px-5 text-xs text-red-500">{error}</p>}
-
       {canSend ? (
-        <form onSubmit={handleSend} className="p-3 border-t border-gray-100 flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={2000}
-            placeholder="Type a message..."
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
-            Send
-          </button>
-        </form>
+        <>
+          {error && <p className="px-5 text-xs text-red-500 mb-1">{error}</p>}
+          <form onSubmit={handleSend} className="p-3 border-t border-gray-100 flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={2000}
+              placeholder="Type a message..."
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+              Send
+            </button>
+          </form>
+        </>
       ) : (
-        <p className="p-3 border-t border-gray-100 text-center text-xs text-gray-400">
-          Chat is closed for this project.
-        </p>
+        <div className="p-3 border-t border-gray-100 text-center text-xs text-gray-500 bg-gray-50 rounded-b-2xl font-medium">
+          🔒 Chat is closed for this project.
+        </div>
       )}
     </div>
   );

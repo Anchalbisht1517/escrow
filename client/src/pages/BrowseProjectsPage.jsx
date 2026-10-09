@@ -30,7 +30,7 @@ function BrowseProjectsPage() {
     }, [page])
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-[120vh] bg-gray-50 pb-20">
             <Navbar />
 
             <div className="max-w-6xl mx-auto px-6 py-10">
@@ -45,8 +45,6 @@ function BrowseProjectsPage() {
                     </p>
                 </div>
 
-                {/* Search & filter UI removed — will be added later */}
-
                 {/* Results */}
                 {loading ? (
                     <div className="text-center py-20 text-gray-400">
@@ -57,7 +55,7 @@ function BrowseProjectsPage() {
                         <div className="text-5xl mb-4">🔍</div>
                         <p className="text-gray-500 text-lg">No projects found</p>
                         <p className="text-gray-400 text-sm mt-1">
-                            Try different keywords or clear filters
+                            Check back later for new project listings
                         </p>
                     </div>
                 ) : (

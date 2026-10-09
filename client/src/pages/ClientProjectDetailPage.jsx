@@ -257,7 +257,7 @@ function ClientProjectDetailPage() {
 
                 {project.hiredFreelancer && (
                     <div className="mb-6">
-                        <ChatBox projectId={project._id} />
+                        <ChatBox projectId={project._id} projectStatus={project.status} />
                     </div>
                 )}
 

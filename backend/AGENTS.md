@@ -110,6 +110,18 @@ be clean and explainable, not just functional.
 | `status`        | `'pending' \| 'accepted' \| 'rejected' \| 'withdrawn'` | Default `'pending'`                                          |
 | Compound index  | `{ project: 1, freelancer: 1 }` unique                 | Prevents a freelancer from bidding twice on the same project |
 
+### `Notification` — `models/Notification.js`
+
+| Field       | Type                                                                                                                                              | Notes                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `recipient` | ObjectId (ref User)                                                                                                                               | Required, indexed — the user receiving the notification       |
+| `sender`    | ObjectId (ref User)                                                                                                                               | Optional (null for system events) — who triggered it          |
+| `type`      | `'bid_placed'\|'bid_accepted'\|'bid_rejected'\|'work_submitted'\|'revision_requested'\|'payment_released'\|'project_cancelled'` | Required enum                                                 |
+| `message`   | String                                                                                                                                            | Required. Human-readable notification text.                   |
+| `project`   | ObjectId (ref Project)                                                                                                                            | Optional (null for non-project events), indexed               |
+| `read`      | Boolean                                                                                                                                           | Default `false`, indexed. Drives unread badge count.          |
+| `createdAt` | Date                                                                                                                                              | Auto-managed via `{ timestamps: true }`                       |
+
 ### `Transaction` — `models/Transaction.js`
 
 | Field                    | Type                                 | Notes                                                |
@@ -189,6 +201,14 @@ be clean and explainable, not just functional.
 | DELETE | `/bid/:bidId`        | `protect`, `restrictTo('freelancer')`                     | `withdrawBid`    | Only when `status === 'pending'`. Decrements `totalBids`.                                       |
 | PATCH  | `/bid/:bidId/reject` | `protect`, `restrictTo('client')`                         | `rejectBid`      | Only when `status === 'pending'`.                                                               |
 
+### Notification Routes — `/api/notifications` → `routes/notificationRoute.js`
+
+| Method | Path            | Middleware | Controller          | Notes                                                                         |
+| ------ | --------------- | ---------- | ------------------- | ----------------------------------------------------------------------------- |
+| GET    | `/`             | `protect`  | `getMyNotifications` | Returns most recent 20 notifications for `req.user`. Also returns `unreadCount`. Sorted newest first. Populates `sender` (firstName, lastName) and `project` (title). |
+| PATCH  | `/read-all`     | `protect`  | `markAllAsRead`      | Sets `read: true` on all unread notifications for `req.user`. Returns `data: null`. |
+| PATCH  | `/:id/read`     | `protect`  | `markAsRead`         | Sets `read: true` on a single notification. Guards: notification must belong to `req.user` (uses `findOneAndUpdate` with recipient check — no separate ownership guard needed). Returns updated notification. |
+
 ---
 
 ## Frontend Pages — `client/src/pages/`
@@ -266,6 +286,7 @@ be clean and explainable, not just functional.
 - [x] **Browse projects** — search bar + skill/budget filters, paginated results
 - [x] **Public freelancer profile** — reviews list, star ratings, skills, bio, stats
 - [x] **Profile edit** — separate forms for client (company info) and freelancer (skills, bio, hourly rate, portfolio links) roles
+- [x] **Notification system** — `Notification` model with 7 event types. Three routes: `GET /api/notifications` (fetch latest 20 + unread count), `PATCH /api/notifications/:id/read` (mark one), `PATCH /api/notifications/read-all` (mark all). All protected by `protect` middleware.
 
 ---
 
@@ -448,16 +469,6 @@ Built complete React frontend with 14 pages covering full client and freelancer 
 Full codebase scan performed across all models, routes, controllers, middleware, utils, and config files.
 Document captures the current state of the project as of this date, including known issues (latent `companyName` populate bug, `asyncHandler` unused, `hireFreelancer` vs `acceptBid` inconsistency), pending decisions (AI features, security deposit), and all architecture rules.
 Previous AGENTS.md existed with corrupted/garbled lines and inaccuracies — replaced entirely with this scan-based version.
-ting` in sync, with top-level fields winning on conflict. Data Models table updated to reflect canonical source.
-- **Reputation system added**: `completedProjectsCount` and `abandonedProjectsCount` fields added to `User` model. `completeProject` increments completed count; `cancelProject` increments abandoned count only when `escrowStatus === 'locked'` (i.e. a freelancer was actively hired). Open-project cancellations do not penalise the freelancer. Security deposit Pending Decision closed.
-
----
-
-## 2026-06-30 — AGENTS.md created — Initial persistent memory document
-
-Full codebase scan performed across all models, routes, controllers, middleware, utils, and config files.
-Document captures the current state of the project as of this date, including known issues (latent `companyName` populate bug, `asyncHandler` unused, `hireFreelancer` vs `acceptBid` inconsistency), pending decisions (AI features, security deposit), and all architecture rules.
-Previous AGENTS.md existed with corrupted/garbled lines and inaccuracies — replaced entirely with this scan-based version.
 
 ---
 
@@ -513,6 +524,18 @@ OVERLAY (position: absolute, width: 50%, left: 0)
 - **Dual Background Images (`card.png` & `card2.png`)**: Replaced solid color gradient on the sliding card overlay with user-provided images (`/card.png` for Sign Up state / left position; `/card2.png` for Sign In state / right position) fitted with `background-size: 100% 100%`.
 - **Synchronized 60fps Cross-Fade Animation**: Implemented dual-layered absolute `div` elements inside the sliding overlay container. Overlays use `opacity` transitions (`willChange: opacity`) synchronized with the slider motion so background images smoothly cross-fade while the card slides left/right across the screen.
 - **GPU Hardware Acceleration & Spring Easing**: Upgraded slider panel transform to 3D GPU acceleration (`transform: translate3d(...)`, `willChange: transform`, `backfaceVisibility: hidden`) and applied an out-expo spring easing curve (`cubic-bezier(0.16, 1, 0.3, 1)`). Duration set to `0.99s` for ultra-smooth 60-120fps motion.
+
+---
+
+## 2026-10-05 — Notification system added
+
+- **`Notification` model** (`models/Notification.js`) created with fields: `recipient` (ref User, required, indexed), `sender` (ref User, optional — null for system events), `type` (enum of 7 event types), `message` (String, required), `project` (ref Project, optional, indexed), `read` (Boolean, default false, indexed). Uses `{ timestamps: true }`.
+- **7 notification types defined**: `bid_placed`, `bid_accepted`, `bid_rejected`, `work_submitted`, `revision_requested`, `payment_released`, `project_cancelled`.
+- **`notificationController.js`** created with three controllers:
+  - `getMyNotifications`: fetches latest 20 for `req.user`, sorted newest-first, with `unreadCount` via `countDocuments`. Populates `sender.firstName/lastName` and `project.title`.
+  - `markAsRead`: `findOneAndUpdate` with both `_id` and `recipient: req.user._id` — ownership enforced at query level, no separate middleware needed.
+  - `markAllAsRead`: `updateMany` on all unread for `req.user`. Returns `data: null`.
+- **`notificationRoute.js`** mounted (presumably at `/api/notifications` in `server.js`). All three routes use `protect` middleware.
 
 ---
 

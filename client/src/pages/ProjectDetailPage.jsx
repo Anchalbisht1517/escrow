@@ -178,7 +178,7 @@ function ProjectDetailPage() {
                         (project.hiredFreelancer._id || project.hiredFreelancer) ===
                         (user?._id || user?.id) && (
                             <div className="mb-6">
-                                <ChatBox projectId={project._id} />
+                                <ChatBox projectId={project._id} projectStatus={project.status} />
                             </div>
                         )}
                     </div>
