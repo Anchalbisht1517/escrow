@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
+import ChatBox from '../components/ChatBox'
 
 function ClientProjectDetailPage() {
     const { id: projectId } = useParams()
@@ -253,6 +254,12 @@ function ClientProjectDetailPage() {
                         )}
                     </div>
                 </div>
+
+                {project.hiredFreelancer && (
+                    <div className="mb-6">
+                        <ChatBox projectId={project._id} />
+                    </div>
+                )}
 
                 {/* Bids section */}
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">

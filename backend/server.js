@@ -9,6 +9,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chatRouter from './routes/chatRoute.js';
+import http from 'http';
+import { initSocket } from './socket/socketServer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,6 +114,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/notifications', notificationRouter);
 
+
 app.use('/api/chat', chatRouter);
 
 app.get('/', (req, res) => {
@@ -120,9 +123,14 @@ app.get('/', (req, res) => {
 
 // Global error handler - must be last
 app.use(errorHandler);
-
 dbConnection();
 
-app.listen(port, () => {
+// Before:
+// app.listen(port, () => { ... });
+
+const httpServer = http.createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(port, () => {
   console.log(`server is listening at ${port}`);
 });

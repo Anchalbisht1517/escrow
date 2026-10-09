@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
 import API from '../api/axiosInstance'
 import Navbar from '../components/Navbar'
+import ChatBox from '../components/ChatBox'
 
 function ProjectDetailPage() {
     const { user } = useAuth()
@@ -171,6 +172,15 @@ function ProjectDetailPage() {
                             </div>
 
                         </div>
+
+                                            {/* Chat — visible to hired freelancer */}
+                    {project.hiredFreelancer &&
+                        (project.hiredFreelancer._id || project.hiredFreelancer) ===
+                        (user?._id || user?.id) && (
+                            <div className="mb-6">
+                                <ChatBox projectId={project._id} />
+                            </div>
+                        )}
                     </div>
 
                     {/* Right — Bid form */}

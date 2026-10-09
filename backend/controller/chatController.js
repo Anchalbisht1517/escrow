@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import { getChatAccess } from '../utils/chatAccess.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { getIO } from '../socket/socketServer.js';
 
 const SENDER_FIELDS = 'firstName lastName avatar';
 
@@ -63,6 +64,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
   await message.populate('sender', SENDER_FIELDS);
 
   // Step 4: emit this message to the project's socket room here
+  getIO().to(`project:${access.project._id}`).emit('chat:message', message);
 
   return res.status(201).json({
     success: true,
