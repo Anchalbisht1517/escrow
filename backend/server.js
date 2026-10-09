@@ -8,6 +8,7 @@ import mongoSanitize from 'mongo-sanitize';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import chatRouter from './routes/chatRoute.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,6 +111,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/notifications', notificationRouter);
+
+app.use('/api/chat', chatRouter);
 
 app.get('/', (req, res) => {
   res.send('hello');

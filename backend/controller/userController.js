@@ -106,6 +106,46 @@ export const login = async (req, res) => {
     });
   }
 };
+
+
+// POST /api/auth/resend-verification   body: { email }
+// POST /api/auth/resend-verification   body: { email }
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required',
+        data: null,
+      });
+    }
+
+    const user = await User.findOne({ email });
+    console.log('resend ->', { found: !!user, isVerified: user?.isVerified });
+
+    if (user && !user.isVerified) {
+      const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
+        expiresIn: '1h',
+      });
+      await sendVerificationEmail({ token, email: user.email });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        'If this email is registered and not verified, a new verification link has been sent',
+      data: null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      data: null,
+    });
+  }
+};
 // Logout Controller — Stateless Session Destruction by clearing cookies
 export const logout = async (req, res) => {
   try {

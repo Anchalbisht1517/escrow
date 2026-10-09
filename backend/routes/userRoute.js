@@ -1,4 +1,5 @@
 import express from 'express';
+import { resendVerification } from '../controller/userController.js';
 
 import {
   register,
@@ -34,6 +35,7 @@ router.post('/login', login);
 router.post('/refresh', refresh);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+router.post('/resend-verification', resendVerification);
 
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
