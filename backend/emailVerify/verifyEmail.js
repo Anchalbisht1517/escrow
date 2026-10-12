@@ -38,7 +38,7 @@ export const sendVerificationEmail = async ({ token, email }) => {
       text: `Hi! You recently registered.
 
 Please verify your email:
-http://localhost:5000/api/auth/verify-email?token=${token}
+${process.env.BACKEND_URL}/api/auth/verify-email?token=${token}
 
 Thanks`,
     };
@@ -96,7 +96,7 @@ export const sendPasswordResetEmail = async ({ token, email }) => {
       text: `Hi! You requested a password reset.
 
 Please use the following link to reset your password:
-http://localhost:5000/api/auth/reset-password/${token}
+${process.env.BACKEND_URL}/api/auth/reset-password/${token}
 
 This link is valid for 10 minutes.
 

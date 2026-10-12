@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { parse } from 'cookie';
+import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { getChatAccess } from '../utils/chatAccess.js';
@@ -21,7 +21,7 @@ export const initSocket = (httpServer) => {
   // ─── AUTH: runs once per connection, same checks as the `protect` middleware ───
   io.use(async (socket, next) => {
     try {
-      const cookies = parse(socket.handshake.headers.cookie || '');
+      const cookies = parseCookie(socket.handshake.headers.cookie || '');
       const token = cookies.accessToken;
       if (!token) return next(new Error('Unauthorized: no token'));
 
@@ -29,7 +29,8 @@ export const initSocket = (httpServer) => {
 
       const user = await User.findById(decoded.id).select('-password');
       if (!user) return next(new Error('Unauthorized: user not found'));
-      if (!user.isActive) return next(new Error('Unauthorized: account inactive'));
+      if (!user.isActive)
+        return next(new Error('Unauthorized: account inactive'));
 
       socket.user = user; // available in every event handler for this connection
       next();
@@ -39,29 +40,29 @@ export const initSocket = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-  console.log(`🔌 Socket connected: ${socket.user.email} (${socket.id})`);
+    console.log(`🔌 Socket connected: ${socket.user.email} (${socket.id})`);
 
-  // Client asks to enter a project's chat room
-  socket.on('chat:join', async (projectId, ack) => {
-    try {
-      const access = await getChatAccess(projectId, socket.user._id);
-      if (!access.ok) return ack?.({ ok: false, message: access.message });
+    // Client asks to enter a project's chat room
+    socket.on('chat:join', async (projectId, ack) => {
+      try {
+        const access = await getChatAccess(projectId, socket.user._id);
+        if (!access.ok) return ack?.({ ok: false, message: access.message });
 
-      socket.join(`project:${projectId}`);
-      ack?.({ ok: true, canSend: access.canSend });
-    } catch (_error) {
-      ack?.({ ok: false, message: 'Could not join chat' });
-    }
+        socket.join(`project:${projectId}`);
+        ack?.({ ok: true, canSend: access.canSend });
+      } catch (_error) {
+        ack?.({ ok: false, message: 'Could not join chat' });
+      }
+    });
+
+    socket.on('chat:leave', (projectId) => {
+      socket.leave(`project:${projectId}`);
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`🔌 Socket disconnected: ${socket.user.email}`);
+    });
   });
-
-  socket.on('chat:leave', (projectId) => {
-    socket.leave(`project:${projectId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`🔌 Socket disconnected: ${socket.user.email}`);
-  });
-});
   return io;
 };
 

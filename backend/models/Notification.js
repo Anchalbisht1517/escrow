@@ -19,12 +19,12 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: [
-        'bid_placed',        // client receives: a freelancer bid on your project
-        'bid_accepted',      // freelancer receives: your bid was accepted
-        'bid_rejected',      // freelancer receives: your bid was rejected
-        'work_submitted',    // client receives: freelancer submitted work for review
+        'bid_placed', // client receives: a freelancer bid on your project
+        'bid_accepted', // freelancer receives: your bid was accepted
+        'bid_rejected', // freelancer receives: your bid was rejected
+        'work_submitted', // client receives: freelancer submitted work for review
         'revision_requested', // freelancer receives: client requested a revision
-        'payment_released',  // freelancer receives: escrow released, payment credited
+        'payment_released', // freelancer receives: escrow released, payment credited
         'project_cancelled', // freelancer receives: project cancelled and escrow refunded
       ],
       required: true,

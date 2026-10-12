@@ -5,7 +5,7 @@ import { v2 as cloudinary } from 'cloudinary';
 // These values come from your Cloudinary dashboard
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // e.g. hjcjpgt2
-  api_key: process.env.CLOUDINARY_API_KEY,       // numeric key from dashboard
+  api_key: process.env.CLOUDINARY_API_KEY, // numeric key from dashboard
   api_secret: process.env.CLOUDINARY_API_SECRET, // secret — never expose to frontend
 });
 

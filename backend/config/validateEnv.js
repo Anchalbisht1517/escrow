@@ -1,5 +1,10 @@
 export const validateEnv = () => {
-  const required = ['MONGO_URI', 'SECRET_KEY', 'PORT'];
+  const required = ['MONGO_URI', 'SECRET_KEY', 'REFRESH_SECRET', 'PORT'];
+
+  if (process.env.NODE_ENV === 'production') {
+    required.push('FRONTEND_URL', 'BACKEND_URL');
+  }
+
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {

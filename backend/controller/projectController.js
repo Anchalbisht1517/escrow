@@ -5,7 +5,13 @@ import Notification from '../models/Notification.js';
 import Transaction from '../models/Transaction.js';
 
 // ─── HELPER: create a notification without blocking the response ───
-const notify = async ({ recipient, sender = null, type, message, project = null }) => {
+const notify = async ({
+  recipient,
+  sender = null,
+  type,
+  message,
+  project = null,
+}) => {
   try {
     await Notification.create({ recipient, sender, type, message, project });
   } catch (err) {

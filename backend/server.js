@@ -31,6 +31,8 @@ validateEnv();
 const port = process.env.PORT || 5000;
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Webhook route must receive raw Buffer for HMAC signature verification
 // This MUST be registered before express.json() so it takes precedence
 app.use('/api/users/wallet/webhook', express.raw({ type: 'application/json' }));
@@ -38,39 +40,41 @@ app.use(express.json());
 app.use(cookieParser());
 // NOTE: No static /uploads middleware needed — files are stored on Cloudinary, not local disk
 
-
 // Security headers
 app.use(helmet());
 
 // CORS - lock to your frontend origin in production
 app.use(
   cors({
-    origin: process.env.NODE_ENV === 'production'
-      ? process.env.FRONTEND_URL
-      : 'http://localhost:5173',
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? process.env.FRONTEND_URL
+        : 'http://localhost:5173',
     credentials: true,
   })
 );
 // Rate limiting - global
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // relaxed for dev
+  max: process.env.NODE_ENV === 'production' ? 1000 : 10000,
   message: {
     success: false,
     message: 'Too many requests, please try again later.',
   },
-})
+});
 
 // Rate limiting - stricter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100000, // Increased for dev testing ease
+  max: process.env.NODE_ENV === 'production' ? 50 : 100000,
   message: {
     success: false,
     message: 'Too many auth attempts, please try again later.',
   },
 });
+
 app.use('/api/auth', authLimiter);
+app.use('/api', globalLimiter);
 
 // NoSQL injection sanitization
 // Note: In Express v5, req.query and req.params are read-only getters,
@@ -113,7 +117,6 @@ app.use('/api/users', usersRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/notifications', notificationRouter);
-
 
 app.use('/api/chat', chatRouter);
 

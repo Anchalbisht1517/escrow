@@ -107,7 +107,6 @@ export const login = async (req, res) => {
   }
 };
 
-
 // POST /api/auth/resend-verification   body: { email }
 // POST /api/auth/resend-verification   body: { email }
 export const resendVerification = async (req, res) => {
@@ -153,14 +152,14 @@ export const logout = async (req, res) => {
     res.clearCookie('accessToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     });
 
     // Clear refreshToken cookie
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     });
 
     return res.status(200).json({
@@ -223,7 +222,7 @@ export const uploadAvatar = async (req, res) => {
     const uploadResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          folder: 'escrow/avatars',   // organises files in Cloudinary dashboard
+          folder: 'escrow/avatars', // organises files in Cloudinary dashboard
           resource_type: 'image',
         },
         (error, result) => {
@@ -334,7 +333,7 @@ export const uploadResume = async (req, res) => {
     // Save Cloudinary URL and public_id to the database
     user.freelancerInfo.resume = {
       public_id: uploadResult.public_id, // used to delete later
-      url: uploadResult.secure_url,      // HTTPS URL served from Cloudinary CDN
+      url: uploadResult.secure_url, // HTTPS URL served from Cloudinary CDN
     };
     await user.save();
 
@@ -515,7 +514,10 @@ export const getUserWallet = async (req, res) => {
         escrowStatus: 'locked',
         status: { $in: ['in-progress', 'under-review'] },
       }).select('title escrowAmount status');
-      lockedInEscrow = activeProjects.reduce((sum, p) => sum + (p.escrowAmount || 0), 0);
+      lockedInEscrow = activeProjects.reduce(
+        (sum, p) => sum + (p.escrowAmount || 0),
+        0
+      );
       escrowProjects = activeProjects;
     } else if (user.role === 'freelancer') {
       // For freelancer — show projects where they are hired and escrow is locked
@@ -524,7 +526,10 @@ export const getUserWallet = async (req, res) => {
         escrowStatus: 'locked',
         status: { $in: ['in-progress', 'under-review'] },
       }).select('title escrowAmount status');
-      lockedInEscrow = activeProjects.reduce((sum, p) => sum + (p.escrowAmount || 0), 0);
+      lockedInEscrow = activeProjects.reduce(
+        (sum, p) => sum + (p.escrowAmount || 0),
+        0
+      );
       escrowProjects = activeProjects;
     }
 
